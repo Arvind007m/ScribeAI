@@ -18,6 +18,10 @@ const fontSpaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: 'ScribeAI',
   description: 'AI-Powered Audio Scribing and Meeting Transcription',
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({

@@ -1,4 +1,4 @@
-import { RecordingInterface } from "@/components/recording-interface";
+import { RecordingInterfaceStream } from "@/components/recording-interface-stream";
 
 export default function Dashboard() {
   return (
@@ -9,7 +9,7 @@ export default function Dashboard() {
       <div
         className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm"
       >
-        <RecordingInterface />
+        <RecordingInterfaceStream />
       </div>
     </>
   );

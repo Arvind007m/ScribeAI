@@ -67,8 +67,27 @@ export async function POST(request: NextRequest) {
     });
 
     // Save transcript if provided
-    if (transcript && transcript.length > 0) {
-      // Split transcript into sentences for better storage
+    if (transcript && Array.isArray(transcript) && transcript.length > 0) {
+      // transcript is an array of { id, speaker, text, timestamp, startTime }
+      console.log('💾 Saving transcripts to database:', transcript.length);
+      
+      for (const t of transcript) {
+        await prisma.transcript.create({
+          data: {
+            recordingSessionId: session.id,
+            speaker: t.speaker || 'Speaker',
+            text: t.text,
+            timestamp: t.timestamp,
+            startTime: t.startTime || 0,
+            endTime: (t.startTime || 0) + 30000, // 30 second chunks
+            confidence: 0.95,
+          },
+        });
+      }
+      
+      console.log('✅ Saved', transcript.length, 'transcripts to database');
+    } else if (transcript && typeof transcript === 'string') {
+      // Fallback: if transcript is a string, split it
       const sentences = transcript.split(/[.!?]+/).filter((s: string) => s.trim().length > 0);
       
       for (let i = 0; i < sentences.length; i++) {
@@ -78,7 +97,9 @@ export async function POST(request: NextRequest) {
             speaker: 'Speaker',
             text: sentences[i].trim(),
             timestamp: `00:${String(i).padStart(2, '0')}:00`,
-            startTime: i * 5000, // Approximate 5 seconds per sentence
+            startTime: i * 5000,
+            endTime: (i + 1) * 5000,
+            confidence: 0.9,
           },
         });
       }

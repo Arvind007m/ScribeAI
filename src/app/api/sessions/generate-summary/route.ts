@@ -46,7 +46,20 @@ Please provide a well-structured, concise summary:`,
       },
     });
 
-    const summary = result.text;
+    // Extract text from result - Genkit returns { text: string }
+    let summary = '';
+    
+    if (typeof result.text === 'string') {
+      summary = result.text;
+    } else if (typeof result.text === 'function') {
+      summary = result.text();
+    } else if (result.output) {
+      summary = result.output;
+    } else {
+      console.error('⚠️ Unknown Genkit response format:', result);
+      summary = `Session Summary\n\nTranscript: ${transcript.substring(0, 200)}...\n\n(Unable to parse AI response)`;
+    }
+    
     console.log('Gemini response received, length:', summary.length);
 
     return NextResponse.json({ summary });

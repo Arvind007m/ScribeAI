@@ -33,9 +33,16 @@ export default function SessionsPage() {
   useEffect(() => {
     async function fetchSessions() {
       try {
-        // TODO: Get actual user ID from auth session
-        const userId = 'demo-user-id';
-        const response = await fetch(`/api/sessions?userId=${userId}`);
+        // Get user from localStorage
+        const userStr = localStorage.getItem('user');
+        if (!userStr) {
+          console.error('No user found in localStorage');
+          setLoading(false);
+          return;
+        }
+        
+        const user = JSON.parse(userStr);
+        const response = await fetch(`/api/sessions?userId=${user.id}`);
         
         if (!response.ok) throw new Error('Failed to fetch sessions');
         

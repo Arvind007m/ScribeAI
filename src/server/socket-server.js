@@ -1,7 +1,5 @@
-import { Server as HTTPServer } from 'http';
-import { Server as SocketIOServer, Socket } from 'socket.io';
-import { prisma } from '@/lib/prisma';
-import { processAudioChunk, generateSummary } from './services/transcription';
+const { Server: SocketIOServer } = require('socket.io');
+const { processAudioChunk, generateSummary } = require('./services/transcription');
 
 /**
  * WebSocket server for real-time audio streaming and transcription
@@ -14,15 +12,8 @@ import { processAudioChunk, generateSummary } from './services/transcription';
  * 4. Real-time transcripts streamed back to client
  * 5. On stop, generate AI summary of full session
  */
-export class SocketServer {
-  private io: SocketIOServer;
-  private activeSessions: Map<string, { 
-    sessionId: string; 
-    startTime: Date;
-    audioSource: string;
-  }> = new Map();
-
-  constructor(server: HTTPServer) {
+class SocketServer {
+  constructor(server) {
     this.io = new SocketIOServer(server, {
       path: '/api/socket.io',
       cors: {
@@ -34,16 +25,17 @@ export class SocketServer {
       pingInterval: 25000,
     });
 
+    this.activeSessions = new Map();
     this.setupEventHandlers();
     console.log('✅ Socket.io server initialized');
   }
 
-  private setupEventHandlers() {
-    this.io.on('connection', (socket: Socket) => {
+  setupEventHandlers() {
+    this.io.on('connection', (socket) => {
       console.log(`✅ Client connected: ${socket.id}`);
 
       // Start recording session
-      socket.on('start-recording', async (data: { sessionId: string; audioSource: string; startTime: string }) => {
+      socket.on('start-recording', async (data) => {
         try {
           console.log(`🎙️ Starting recording session: ${data.sessionId}`);
           
@@ -68,54 +60,63 @@ export class SocketServer {
       });
 
       // Receive audio chunk
-      socket.on('audio-chunk', async (data: { 
-        sessionId: string; 
-        chunk: Buffer; 
-        chunkIndex: number;
-        timestamp: string;
-      }) => {
-        const sessionInfo = this.activeSessions.get(data.sessionId);
-        if (!sessionInfo) {
-          socket.emit('error', 'No active session');
-          return;
-        }
-
+      socket.on('audio-chunk', async (data) => {
         try {
-          console.log(`📦 Received audio chunk ${data.chunkIndex} for session ${data.sessionId}, size: ${data.chunk.length} bytes`);
+          const sessionInfo = this.activeSessions.get(data.sessionId);
+          if (!sessionInfo) {
+            console.warn(`⚠️ No active session found for ${data.sessionId}`);
+            socket.emit('error', 'No active session');
+            return;
+          }
+
+          // Convert array back to Buffer
+          const audioBuffer = Buffer.from(data.chunk);
+          
+          console.log(`📦 Received audio chunk ${data.chunkIndex} for session ${data.sessionId}, size: ${audioBuffer.length} bytes`);
 
           // Process chunk for transcription with Gemini
           const transcriptSegment = await processAudioChunk(
-            data.chunk,
+            audioBuffer,
             data.sessionId,
             data.chunkIndex
           );
 
           if (transcriptSegment) {
-            console.log(`✅ Transcription generated for chunk ${data.chunkIndex}:`, transcriptSegment.text.substring(0, 50) + '...');
+            // transcriptSegment is now an array of segments (one per speaker)
+            const segments = Array.isArray(transcriptSegment) ? transcriptSegment : [transcriptSegment];
             
-            // Emit transcription to all clients in this session room
-            this.io.to(data.sessionId).emit('transcript-segment', transcriptSegment);
+            console.log(`✅ Transcription generated for chunk ${data.chunkIndex}: ${segments.length} speaker segment(s)`);
+            console.log(`📤 Emitting ${segments.length} transcript(s) to session room: ${data.sessionId}`);
+            
+            // Emit each segment separately so they appear on separate lines
+            for (const segment of segments) {
+              this.io.to(data.sessionId).emit('transcript-segment', segment);
+              socket.emit('transcript-segment', segment);
+            }
+          } else {
+            console.warn(`⚠️ No transcription generated for chunk ${data.chunkIndex}`);
           }
         } catch (error) {
           console.error(`❌ Error processing audio chunk ${data.chunkIndex}:`, error);
+          console.error('Error details:', error.message, error.stack);
           socket.emit('error', 'Failed to process audio chunk');
         }
       });
 
       // Pause recording
-      socket.on('pause-recording', async (data: { sessionId: string }) => {
+      socket.on('pause-recording', async (data) => {
         console.log(`⏸️ Pausing session: ${data.sessionId}`);
         this.io.to(data.sessionId).emit('recording-paused', { sessionId: data.sessionId });
       });
 
       // Resume recording
-      socket.on('resume-recording', async (data: { sessionId: string }) => {
+      socket.on('resume-recording', async (data) => {
         console.log(`▶️ Resuming session: ${data.sessionId}`);
         this.io.to(data.sessionId).emit('recording-resumed', { sessionId: data.sessionId });
       });
 
       // Stop recording and generate summary
-      socket.on('stop-recording', async (data: { sessionId: string; endTime: string }) => {
+      socket.on('stop-recording', async (data) => {
         const sessionInfo = this.activeSessions.get(data.sessionId);
         if (!sessionInfo) return;
 
@@ -144,8 +145,10 @@ export class SocketServer {
     });
   }
 
-  public getIO(): SocketIOServer {
+  getIO() {
     return this.io;
   }
 }
+
+module.exports = { SocketServer };
 

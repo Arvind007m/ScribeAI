@@ -1,13 +1,14 @@
 import { ai } from '@/ai/genkit';
 import { prisma } from '@/lib/prisma';
-import { generate } from 'genkit';
 
 /**
  * Process audio chunk and generate transcription using Gemini
- * @param audioData - Raw audio buffer
+ * Implements speaker diarization and accurate transcription
+ * 
+ * @param audioData - Raw audio buffer (WebM format)
  * @param sessionId - Recording session ID
  * @param chunkIndex - Sequential chunk number
- * @returns Transcript segment or null if processing fails
+ * @returns Transcript segment with speaker identification
  */
 export async function processAudioChunk(
   audioData: Buffer,
@@ -15,68 +16,94 @@ export async function processAudioChunk(
   chunkIndex: number
 ): Promise<any | null> {
   try {
+    console.log(`🎯 Processing audio chunk ${chunkIndex}, size: ${audioData.length} bytes`);
+    
     // Convert audio buffer to base64 for Gemini API
     const audioBase64 = audioData.toString('base64');
 
-    // Use Gemini to transcribe audio
-    // Note: Gemini 2.0 supports audio input
-    const result = await generate({
-      model: ai.model('googleai/gemini-2.0-flash-exp'),
+    // Use Gemini 2.5 Flash to transcribe audio with speaker diarization
+    const result = await ai.generate({
+      model: 'googleai/gemini-2.5-flash',
       prompt: [
         {
-          text: 'Transcribe the following audio accurately. Include speaker identification if multiple speakers are detected. Format: [Speaker]: text',
+          text: `Transcribe the following audio accurately with speaker diarization.
+
+IMPORTANT INSTRUCTIONS:
+1. Identify different speakers and label them as Speaker 1, Speaker 2, etc.
+2. If only one speaker, label as "Speaker 1"
+3. Format each line as: [Speaker X]: transcribed text
+4. Be accurate with the transcription
+5. Include all spoken words
+
+Example format:
+[Speaker 1]: Hello everyone, welcome to the meeting.
+[Speaker 2]: Thanks for having me.`,
         },
         {
           media: {
-            contentType: 'audio/webm',
-            url: `data:audio/webm;base64,${audioBase64}`,
+            contentType: 'audio/webm;codecs=opus',
+            url: `data:audio/webm;codecs=opus;base64,${audioBase64}`,
           },
         },
       ],
       config: {
         temperature: 0.1, // Low temperature for accurate transcription
+        maxOutputTokens: 2048,
       },
     });
 
-    const transcriptionText = result.text();
+    const transcriptionText = result.text;
 
-    if (!transcriptionText) {
-      console.warn(`No transcription generated for chunk ${chunkIndex}`);
+    if (!transcriptionText || transcriptionText.trim().length === 0) {
+      console.warn(`⚠️ No transcription generated for chunk ${chunkIndex}`);
       return null;
     }
 
-    // Parse speaker and text (if format is [Speaker]: text)
-    let speaker = 'Unknown';
-    let text = transcriptionText;
-    const speakerMatch = transcriptionText.match(/^\[(.*?)\]:\s*(.+)$/s);
-    if (speakerMatch) {
-      speaker = speakerMatch[1];
-      text = speakerMatch[2];
+    console.log(`✅ Transcription received for chunk ${chunkIndex}:`, transcriptionText.substring(0, 100) + '...');
+
+    // Parse multiple speakers from the transcription
+    // Format: [Speaker X]: text
+    const lines = transcriptionText.split('\n').filter(line => line.trim());
+    const segments = [];
+
+    for (const line of lines) {
+      const speakerMatch = line.match(/^\[(.*?)\]:\s*(.+)$/);
+      if (speakerMatch) {
+        segments.push({
+          speaker: speakerMatch[1].trim(),
+          text: speakerMatch[2].trim(),
+        });
+      } else if (line.trim()) {
+        // Fallback: if no speaker format, use "Speaker 1"
+        segments.push({
+          speaker: 'Speaker 1',
+          text: line.trim(),
+        });
+      }
+    }
+
+    if (segments.length === 0) {
+      // No segments parsed, use entire text
+      segments.push({
+        speaker: 'Speaker 1',
+        text: transcriptionText.trim(),
+      });
     }
 
     // Calculate timestamp (assuming 30-second chunks)
     const startTime = chunkIndex * 30000; // milliseconds
     const timestamp = formatTimestamp(startTime);
 
-    // Store transcript in database
-    const transcript = await prisma.transcript.create({
-      data: {
-        recordingSessionId: sessionId,
-        speaker,
-        text,
-        timestamp,
-        startTime,
-        endTime: startTime + 30000,
-        confidence: 0.95, // Gemini doesn't provide confidence, using default
-      },
-    });
+    // Return the first segment (or combine all segments)
+    const combinedText = segments.map(s => `[${s.speaker}]: ${s.text}`).join(' ');
+    const primarySpeaker = segments[0].speaker;
 
     return {
-      id: transcript.id,
-      speaker: transcript.speaker,
-      text: transcript.text,
-      timestamp: transcript.timestamp,
-      startTime: transcript.startTime,
+      speaker: primarySpeaker,
+      text: combinedText,
+      timestamp,
+      startTime,
+      chunkIndex,
     };
   } catch (error) {
     console.error('Error processing audio chunk:', error);
@@ -86,43 +113,42 @@ export async function processAudioChunk(
 
 /**
  * Generate AI summary of the meeting transcripts
- * @param transcripts - Array of transcript segments
- * @returns Summary text
+ * @param fullTranscript - Complete transcript text
+ * @returns Summary text with key points and action items
  */
-export async function generateSummary(transcripts: any[]): Promise<string> {
+export async function generateSummary(fullTranscript: string): Promise<string> {
   try {
-    if (transcripts.length === 0) {
+    if (!fullTranscript || fullTranscript.trim().length === 0) {
       return 'No transcription available for this session.';
     }
 
-    // Combine all transcripts into a single text
-    const fullTranscript = transcripts
-      .map((t) => `[${t.timestamp}] ${t.speaker}: ${t.text}`)
-      .join('\n');
+    console.log(`📝 Generating summary for transcript (${fullTranscript.length} characters)`);
 
     // Generate summary using Gemini
-    const result = await generate({
-      model: ai.model('googleai/gemini-2.0-flash-exp'),
+    const result = await ai.generate({
+      model: 'googleai/gemini-2.5-flash',
       prompt: `Analyze the following meeting transcript and provide a comprehensive summary including:
-1. Main topics discussed
-2. Key decisions made
-3. Action items and assignments
-4. Important deadlines or dates mentioned
-5. Overall meeting outcome
+
+1. **Main Topics Discussed**: What were the primary subjects covered?
+2. **Key Decisions Made**: What important decisions were reached?
+3. **Action Items**: What tasks were assigned and to whom?
+4. **Important Dates/Deadlines**: Any mentioned timelines?
+5. **Overall Outcome**: What was the result of this meeting?
 
 Transcript:
 ${fullTranscript}
 
-Please provide a well-structured summary:`,
+Please provide a well-structured, professional summary:`,
       config: {
         temperature: 0.3,
         maxOutputTokens: 1024,
       },
     });
 
-    return result.text();
+    console.log(`✅ Summary generated successfully`);
+    return result.text;
   } catch (error) {
-    console.error('Error generating summary:', error);
+    console.error('❌ Error generating summary:', error);
     return 'Failed to generate summary. Please try again.';
   }
 }
