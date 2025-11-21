@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ai } from '@/ai/genkit';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * POST /api/sessions/generate-summary
  * Generate AI summary from transcript using Gemini
