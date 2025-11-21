@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for Better Auth
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  name          String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  sessions      Session[]
+  accounts      Account[]
+  verifications Verification[]
+}
+
+// Better Auth Account model (for OAuth providers)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+// Better Auth Session model
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Better Auth Verification model (for email verification)
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([identifier, token])
+  @@index([userId])
+}
+
+// Recording Session model
+model RecordingSession {
+  id              String   @id @default(cuid())
+  userId          String
+  title           String
+  audioSource     String   // 'microphone' or 'tab-audio'
+  status          String   @default("recording") // 'recording', 'paused', 'processing', 'completed', 'failed'
+  duration        Int      @default(0) // in seconds
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  summary         String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  transcripts     Transcript[]
+  audioChunks     AudioChunk[]
+  
+  @@index([userId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+// Transcript segments with timestamps
+model Transcript {
+  id                 String           @id @default(cuid())
+  recordingSessionId String
+  speaker            String?          // For speaker diarization
+  text               String           @db.Text
+  timestamp          String           // Format: "HH:MM:SS"
+  startTime          Int              // in milliseconds from session start
+  endTime            Int?             // in milliseconds from session start
+  confidence         Float?           // Transcription confidence score
+  createdAt          DateTime         @default(now())
+  
+  recordingSession   RecordingSession @relation(fields: [recordingSessionId], references: [id], onDelete: Cascade)
+  
+  @@index([recordingSessionId])
+  @@index([startTime])
+}
+
+// Audio chunks for storage and processing
+model AudioChunk {
+  id                 String           @id @default(cuid())
+  recordingSessionId String
+  chunkIndex         Int              // Sequential chunk number
+  audioData          Bytes?           // Store binary audio data
+  audioUrl           String?          // Or store URL to cloud storage
+  duration           Int              // Chunk duration in milliseconds
+  processed          Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  
+  recordingSession   RecordingSession @relation(fields: [recordingSessionId], references: [id], onDelete: Cascade)
+  
+  @@unique([recordingSessionId, chunkIndex])
+  @@index([recordingSessionId])
+  @@index([processed])
+}
