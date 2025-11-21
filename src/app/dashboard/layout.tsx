@@ -1,4 +1,8 @@
+'use client';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import {
   Bell,
   BotMessageSquare,
@@ -26,6 +30,33 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const user = localStorage.getItem('user');
+    const sessionToken = localStorage.getItem('sessionToken');
+
+    if (!user || !sessionToken) {
+      router.push('/login');
+    } else {
+      setIsAuthenticated(true);
+    }
+    setIsLoading(false);
+  }, [router]);
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">

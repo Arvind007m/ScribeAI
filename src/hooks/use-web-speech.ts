@@ -86,17 +86,23 @@ export function useWebSpeech() {
 
       recognition.onend = () => {
         // Auto-restart if still supposed to be listening
+        // This is crucial for mobile devices where recognition stops after silence
         if (isListening) {
           setTimeout(() => {
-            if (recognitionRef.current) {
+            if (recognitionRef.current && isListening) {
               try {
                 recognitionRef.current.start();
+                console.log('Speech recognition auto-restarted');
               } catch (e) {
-                // Already started
+                console.log('Failed to restart:', e);
               }
             }
-          }, 100);
+          }, 300); // Increased timeout for mobile stability
         }
+      };
+
+      recognition.onstart = () => {
+        console.log('Speech recognition started');
       };
 
       recognitionRef.current = recognition;
