@@ -1,11 +1,10 @@
-// Global transcript store that survives HMR
 let globalTranscripts: any[] = [];
 let globalSessionId: string | null = null;
 let globalStartTime: Date | null = null;
 
 export function addTranscript(transcript: any) {
   globalTranscripts.push(transcript);
-  console.log('📝 Added transcript to global store, total:', globalTranscripts.length);
+  console.log('Added transcript to global store, total:', globalTranscripts.length);
 }
 
 export function getTranscripts() {
@@ -14,7 +13,7 @@ export function getTranscripts() {
 
 export function clearTranscripts() {
   globalTranscripts = [];
-  console.log('🗑️ Cleared global transcript store');
+  console.log('Cleared global transcript store');
 }
 
 export function getTranscriptCount() {
@@ -23,7 +22,7 @@ export function getTranscriptCount() {
 
 export function setSessionId(sessionId: string | null) {
   globalSessionId = sessionId;
-  console.log('🆔 Set global sessionId:', sessionId);
+  console.log('Set global sessionId:', sessionId);
 }
 
 export function getSessionId() {
@@ -32,7 +31,7 @@ export function getSessionId() {
 
 export function setStartTime(startTime: Date | null) {
   globalStartTime = startTime;
-  console.log('⏰ Set global startTime:', startTime);
+  console.log('Set global startTime:', startTime);
 }
 
 export function getStartTime() {

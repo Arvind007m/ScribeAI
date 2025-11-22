@@ -11,7 +11,7 @@ import {
 interface UseAudioStreamOptions {
   onTranscriptUpdate?: (transcript: { speaker: string; text: string; timestamp: string }) => void;
   onError?: (error: string) => void;
-  chunkDuration?: number; // in milliseconds
+  chunkDuration?: number;
 }
 
 interface TranscriptSegment {
@@ -21,7 +21,7 @@ interface TranscriptSegment {
 }
 
 export function useAudioStream(options: UseAudioStreamOptions = {}) {
-  const { onTranscriptUpdate, onError, chunkDuration = 30000 } = options; // 30 seconds default
+  const { onTranscriptUpdate, onError, chunkDuration = 30000 } = options;
 
   const [isRecording, setIsRecording] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -32,32 +32,29 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
   const streamRef = useRef<MediaStream | null>(null);
   const chunkCountRef = useRef(0);
 
-  // Auto-connect on mount using global socket
   useEffect(() => {
     const socket = getSocket();
     socketRef.current = socket;
 
-    // Set initial connection state
     setIsConnected(socket.connected);
 
-    // Listen for connection events
     const handleConnect = () => {
-      console.log('✅ Socket connected in hook');
+      console.log('Socket connected in hook');
       setIsConnected(true);
     };
 
     const handleDisconnect = (reason: string) => {
-      console.log('🔌 Socket disconnected in hook:', reason);
+      console.log('Socket disconnected in hook:', reason);
       setIsConnected(false);
     };
 
     const handleTranscript = (segment: TranscriptSegment) => {
-      console.log('📝 Received transcript segment:', segment);
+      console.log('Received transcript segment:', segment);
       onTranscriptUpdate?.(segment);
     };
 
     const handleError = (error: string) => {
-      console.error('❌ Socket error:', error);
+      console.error('Socket error:', error);
       onError?.(error);
     };
 
@@ -66,7 +63,6 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
     socket.on('transcript-segment', handleTranscript);
     socket.on('error', handleError);
 
-    // Cleanup listeners (but not socket) on unmount
     return () => {
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect);
@@ -75,16 +71,13 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
     };
   }, [onTranscriptUpdate, onError]);
 
-  // Initialize Socket.io connection (for manual connection)
   const connectSocket = useCallback(() => {
     if (socketRef.current?.connected) {
       console.log('Already connected');
       return;
     }
-    // Socket is already connected in useEffect
   }, []);
 
-  // Start recording
   const startRecording = useCallback(
     async (audioSource: 'microphone' | 'tab-audio' = 'microphone') => {
       try {
@@ -95,9 +88,8 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
         let stream: MediaStream;
 
         if (audioSource === 'tab-audio') {
-          // Capture tab audio with screen share (video required by some browsers)
           const displayStream = await navigator.mediaDevices.getDisplayMedia({
-            video: true, // Required by Chrome
+            video: true,
             audio: {
               echoCancellation: false,
               noiseSuppression: false,
@@ -105,7 +97,6 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
             },
           });
 
-          // Check if audio track exists
           const audioTracks = displayStream.getAudioTracks();
           if (audioTracks.length === 0) {
             displayStream.getTracks().forEach((track) => track.stop());
@@ -114,15 +105,12 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
             );
           }
 
-          console.log('✅ Tab audio captured:', audioTracks[0].label);
+          console.log('Tab audio captured:', audioTracks[0].label);
 
-          // Create new stream with only audio (discard video)
           stream = new MediaStream(audioTracks);
 
-          // Stop video tracks to save resources
           displayStream.getVideoTracks().forEach((track) => track.stop());
         } else {
-          // Capture microphone
           stream = await navigator.mediaDevices.getUserMedia({
             audio: {
               echoCancellation: true,
@@ -134,7 +122,6 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
 
         streamRef.current = stream;
 
-        // Create MediaRecorder with appropriate format
         const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
           ? 'audio/webm;codecs=opus'
           : 'audio/webm';
@@ -147,58 +134,53 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
         mediaRecorderRef.current = mediaRecorder;
         chunkCountRef.current = 0;
 
-        // Generate session ID
         const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         setSessionId(newSessionId);
-        setGlobalSessionId(newSessionId); // Store in global (survives HMR)
-        console.log('🆔 Session ID set (local + global):', newSessionId);
+        setGlobalSessionId(newSessionId);
+        console.log('Session ID set (local + global):', newSessionId);
 
-        // Emit start-recording event
         socketRef.current?.emit('start-recording', {
           sessionId: newSessionId,
           audioSource,
           startTime: new Date().toISOString(),
         });
 
-        // Handle audio data chunks
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
             const chunkIndex = chunkCountRef.current++;
 
-            console.log(`📦 Audio chunk ${chunkIndex} available, size: ${event.data.size} bytes`);
+            console.log(`Audio chunk ${chunkIndex} available, size: ${event.data.size} bytes`);
 
             if (!socketRef.current?.connected) {
-              console.error('❌ Socket not connected, attempting to reconnect...');
+              console.error('Socket not connected, attempting to reconnect...');
               socketRef.current?.connect();
 
-              // Wait a bit for reconnection
               setTimeout(() => {
                 if (!socketRef.current?.connected) {
-                  console.error('❌ Failed to reconnect, chunk lost');
+                  console.error('Failed to reconnect, chunk lost');
                   return;
                 }
               }, 1000);
             }
 
-            // Convert Blob to ArrayBuffer and send via Socket.io
             event.data
               .arrayBuffer()
               .then((arrayBuffer) => {
                 const uint8Array = new Uint8Array(arrayBuffer);
 
                 console.log(
-                  `📤 Sending audio chunk ${chunkIndex}, size: ${uint8Array.length} bytes`
+                  `Sending audio chunk ${chunkIndex}, size: ${uint8Array.length} bytes`
                 );
 
                 socketRef.current?.emit('audio-chunk', {
                   sessionId: newSessionId,
-                  chunk: Array.from(uint8Array), // Convert to regular array for Socket.io
+                  chunk: Array.from(uint8Array),
                   chunkIndex,
                   timestamp: new Date().toISOString(),
                 });
               })
               .catch((error) => {
-                console.error(`❌ Error processing chunk ${chunkIndex}:`, error);
+                console.error(`Error processing chunk ${chunkIndex}:`, error);
               });
           }
         };
@@ -213,7 +195,6 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
           setIsRecording(false);
         };
 
-        // Start recording with time slicing (chunks every 30s)
         mediaRecorder.start(chunkDuration);
         setIsRecording(true);
 
@@ -227,16 +208,13 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
     [connectSocket, chunkDuration, onError]
   );
 
-  // Stop recording
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
 
-      // Stop all tracks
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
 
-      // Emit stop-recording event
       if (sessionId) {
         socketRef.current?.emit('stop-recording', {
           sessionId,
@@ -248,7 +226,6 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
     }
   }, [isRecording, sessionId]);
 
-  // Pause recording
   const pauseRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.pause();
@@ -256,7 +233,6 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
     }
   }, [isRecording, sessionId]);
 
-  // Resume recording
   const resumeRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.resume();
@@ -264,7 +240,6 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
     }
   }, [isRecording, sessionId]);
 
-  // Cleanup
   const cleanup = useCallback(() => {
     stopRecording();
     socketRef.current?.disconnect();

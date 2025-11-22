@@ -5,17 +5,12 @@ import { z } from 'zod';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-/**
- * POST /api/sessions/generate-summary
- * Generate AI summary from transcript using Gemini
- */
 export async function POST(request: NextRequest) {
   let transcript = '';
 
   try {
     const body = await request.json();
 
-    // Validate request body with Zod
     const generateSummarySchema = z.object({
       transcript: z.string().min(10, 'Transcript must be at least 10 characters'),
       startTime: z.number().optional(),
@@ -40,11 +35,9 @@ export async function POST(request: NextRequest) {
     const { startTime } = validationResult.data;
 
     console.log('Received transcript, length:', transcript.length);
-
     console.log('Calling Gemini API...');
     console.log('Transcript preview:', transcript.substring(0, 200));
 
-    // Generate summary using Gemini
     const result = await ai.generate({
       model: 'googleai/gemini-2.5-flash',
       prompt: `Analyze the following meeting transcript and provide a comprehensive summary in PLAIN TEXT format (no markdown, no asterisks, no special formatting).
@@ -71,9 +64,8 @@ IMPORTANT:
       },
     });
 
-    console.log('✅ Gemini raw result:', JSON.stringify(result, null, 2));
+    console.log('Gemini raw result:', JSON.stringify(result, null, 2));
 
-    // Extract text from result - Genkit returns { text: string }
     let summary = '';
 
     if (typeof result.text === 'string') {
@@ -83,7 +75,7 @@ IMPORTANT:
     } else if (result.output) {
       summary = result.output;
     } else {
-      console.error('⚠️ Unknown Genkit response format:', result);
+      console.error('Unknown Genkit response format:', result);
       summary = `Session Summary\n\nTranscript: ${transcript.substring(0, 200)}...\n\n(Unable to parse AI response)`;
     }
 
@@ -95,7 +87,6 @@ IMPORTANT:
     console.error('Error generating summary:', error);
     console.error('Error details:', error.message);
 
-    // Return fallback summary on error
     const wordCount = transcript ? transcript.split(' ').length : 0;
     const fallbackSummary = `AI Summary Generation Test\n\nTranscript received: ${wordCount} words\n\nNote: There was an error connecting to Gemini AI. Please check:\n1. GOOGLE_GEMINI_API_KEY is set in .env.local\n2. API key is valid\n3. Internet connection is working\n\nError: ${error.message}`;
 

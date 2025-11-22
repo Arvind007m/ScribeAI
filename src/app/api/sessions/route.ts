@@ -5,15 +5,11 @@ import { z } from 'zod';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-/**
- * GET /api/sessions - Get all sessions for a user
- */
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId');
 
-    // Validate userId
     const userIdSchema = z.string().cuid();
     const validationResult = userIdSchema.safeParse(userId);
 
@@ -33,7 +29,7 @@ export async function GET(request: NextRequest) {
       },
       include: {
         transcripts: {
-          take: 3, // Preview only
+          take: 3,
           orderBy: { startTime: 'asc' },
         },
       },
@@ -46,14 +42,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * POST /api/sessions - Create a new session
- */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Validate request body with Zod
     const createSessionSchema = z.object({
       userId: z.string().cuid('Invalid user ID format'),
       title: z.string().min(1, 'Title is required'),
@@ -90,7 +82,6 @@ export async function POST(request: NextRequest) {
 
     const { userId, title, audioSource, transcript, summary, duration } = validationResult.data;
 
-    // Create session
     const session = await prisma.recordingSession.create({
       data: {
         userId,
@@ -103,10 +94,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Save transcript if provided
     if (transcript && Array.isArray(transcript) && transcript.length > 0) {
-      // transcript is an array of { id, speaker, text, timestamp, startTime }
-      console.log('💾 Saving transcripts to database:', transcript.length);
+      console.log('Saving transcripts to database:', transcript.length);
 
       for (const t of transcript) {
         await prisma.transcript.create({
@@ -116,15 +105,14 @@ export async function POST(request: NextRequest) {
             text: t.text,
             timestamp: t.timestamp,
             startTime: t.startTime || 0,
-            endTime: (t.startTime || 0) + 30000, // 30 second chunks
+            endTime: (t.startTime || 0) + 30000,
             confidence: 0.95,
           },
         });
       }
 
-      console.log('✅ Saved', transcript.length, 'transcripts to database');
+      console.log('Saved', transcript.length, 'transcripts to database');
     } else if (transcript && typeof transcript === 'string') {
-      // Fallback: if transcript is a string, split it
       const sentences = transcript.split(/[.!?]+/).filter((s: string) => s.trim().length > 0);
 
       for (let i = 0; i < sentences.length; i++) {
