@@ -2,6 +2,14 @@
 
 ScribeAI is a full-stack Next.js application that captures and transcribes audio sessions in real-time using Google's Gemini AI. It supports both microphone input and tab audio capture (e.g., from Google Meet, Zoom), with features like live transcription, session management, AI-powered summaries, and export capabilities.
 
+## Video Walkthrough
+
+Watch the complete demo showcasing tab audio capture and real-time transcription:
+
+[![ScribeAI Demo](https://img.youtube.com/vi/ho1UqpV83ac/maxresdefault.jpg)](https://youtu.be/ho1UqpV83ac)
+
+[Watch on YouTube](https://youtu.be/ho1UqpV83ac)
+
 ## Key Features
 
 - **Real-time Audio Transcription**: Stream audio and get live transcription using Gemini AI
