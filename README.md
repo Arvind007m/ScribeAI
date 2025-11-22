@@ -23,7 +23,7 @@ ScribeAI is a full-stack Next.js application that captures and transcribes audio
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: Better Auth
 - **Real-time Communication**: Socket.io (WebSockets)
-- **AI Integration**: Google Gemini 2.5 via Genkit
+- **AI Integration**: Google Gemini 2.5 Flash via Genkit AI
 - **UI Components**: Radix UI + Tailwind CSS
 - **Audio Processing**: MediaRecorder API
 
@@ -359,7 +359,7 @@ For a 1-hour recording session:
 ## Acknowledgments
 
 - [Google Gemini](https://ai.google.dev) for powerful AI capabilities
-- [Genkit](https://firebase.google.com/docs/genkit) for AI integration framework
+- [Genkit AI](https://github.com/firebase/genkit) for AI integration framework
 - [Prisma](https://www.prisma.io) for excellent database tooling
 - [Socket.io](https://socket.io) for real-time communication
 - [Radix UI](https://www.radix-ui.com) for accessible components
