@@ -7,10 +7,7 @@ export const runtime = 'nodejs';
 /**
  * GET /api/sessions/[id] - Get a specific session with full transcripts
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await prisma.recordingSession.findUnique({
       where: {
@@ -37,10 +34,7 @@ export async function GET(
 /**
  * PATCH /api/sessions/[id] - Update a session
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await request.json();
     const { status, summary, duration } = body;
@@ -67,10 +61,7 @@ export async function PATCH(
 /**
  * DELETE /api/sessions/[id] - Delete a session
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await prisma.recordingSession.delete({
       where: {
@@ -84,4 +75,3 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to delete session' }, { status: 500 });
   }
 }
-

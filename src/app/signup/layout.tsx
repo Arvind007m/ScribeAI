@@ -1,11 +1,6 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export default function SignupLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function SignupLayout({ children }: { children: React.ReactNode }) {
   return children;
 }
-

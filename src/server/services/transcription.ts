@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 /**
  * Process audio chunk and generate transcription using Gemini
  * Implements speaker diarization and accurate transcription
- * 
+ *
  * @param audioData - Raw audio buffer (WebM format)
  * @param sessionId - Recording session ID
  * @param chunkIndex - Sequential chunk number
@@ -17,7 +17,7 @@ export async function processAudioChunk(
 ): Promise<any | null> {
   try {
     console.log(`🎯 Processing audio chunk ${chunkIndex}, size: ${audioData.length} bytes`);
-    
+
     // Convert audio buffer to base64 for Gemini API
     const audioBase64 = audioData.toString('base64');
 
@@ -59,11 +59,14 @@ Example format:
       return null;
     }
 
-    console.log(`✅ Transcription received for chunk ${chunkIndex}:`, transcriptionText.substring(0, 100) + '...');
+    console.log(
+      `✅ Transcription received for chunk ${chunkIndex}:`,
+      transcriptionText.substring(0, 100) + '...'
+    );
 
     // Parse multiple speakers from the transcription
     // Format: [Speaker X]: text
-    const lines = transcriptionText.split('\n').filter(line => line.trim());
+    const lines = transcriptionText.split('\n').filter((line) => line.trim());
     const segments = [];
 
     for (const line of lines) {
@@ -95,7 +98,7 @@ Example format:
     const timestamp = formatTimestamp(startTime);
 
     // Return the first segment (or combine all segments)
-    const combinedText = segments.map(s => `[${s.speaker}]: ${s.text}`).join(' ');
+    const combinedText = segments.map((s) => `[${s.speaker}]: ${s.text}`).join(' ');
     const primarySpeaker = segments[0].speaker;
 
     return {
@@ -239,4 +242,3 @@ export function groupBySpeaker(transcripts: any[]): any[] {
 
   return grouped;
 }
-

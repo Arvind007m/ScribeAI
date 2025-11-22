@@ -31,13 +31,13 @@ ScribeAI is a full-stack Next.js application that captures and transcribes audio
 
 \`\`\`mermaid
 graph TB
-    Client[Web Browser]
-    NextJS[Next.js App Router]
-    SocketIO[Socket.io Server]
-    Prisma[Prisma ORM]
-    Postgres[(PostgreSQL)]
-    Gemini[Google Gemini API]
-    
+Client[Web Browser]
+NextJS[Next.js App Router]
+SocketIO[Socket.io Server]
+Prisma[Prisma ORM]
+Postgres[(PostgreSQL)]
+Gemini[Google Gemini API]
+
     Client -->|HTTP/HTTPS| NextJS
     Client -->|WebSocket| SocketIO
     NextJS -->|Query/Mutation| Prisma
@@ -46,19 +46,20 @@ graph TB
     SocketIO -->|Audio Chunks| Gemini
     Gemini -->|Transcription| SocketIO
     SocketIO -->|Real-time Updates| Client
+
 \`\`\`
 
 ### Audio Streaming Pipeline
 
 \`\`\`mermaid
 sequenceDiagram
-    participant Browser
-    participant MediaRecorder
-    participant Socket.io
-    participant Server
-    participant Gemini
-    participant Database
-    
+participant Browser
+participant MediaRecorder
+participant Socket.io
+participant Server
+participant Gemini
+participant Database
+
     Browser->>MediaRecorder: Start Recording
     MediaRecorder->>MediaRecorder: Chunk Audio (30s)
     MediaRecorder->>Socket.io: Send Audio Chunk
@@ -69,51 +70,56 @@ sequenceDiagram
     Server->>Database: Store Transcript
     Server->>Socket.io: Emit 'transcription-update'
     Socket.io->>Browser: Display Transcript
+
 \`\`\`
 
 ## 📊 Architecture Comparison: Streaming vs. Upload
 
 ### Streaming Approach (Current Implementation)
 
-| Aspect | Details |
-|--------|---------|
-| **Latency** | Low (2-5 seconds per chunk) |
-| **User Experience** | Live transcription, immediate feedback |
-| **Memory Usage** | Efficient (chunks processed incrementally) |
-| **Scalability** | High (concurrent sessions supported) |
-| **Network** | Consistent bandwidth usage |
-| **Reliability** | Resilient (auto-reconnect, pause/resume) |
-| **Use Case** | Long meetings (1+ hours) |
+| Aspect              | Details                                    |
+| ------------------- | ------------------------------------------ |
+| **Latency**         | Low (2-5 seconds per chunk)                |
+| **User Experience** | Live transcription, immediate feedback     |
+| **Memory Usage**    | Efficient (chunks processed incrementally) |
+| **Scalability**     | High (concurrent sessions supported)       |
+| **Network**         | Consistent bandwidth usage                 |
+| **Reliability**     | Resilient (auto-reconnect, pause/resume)   |
+| **Use Case**        | Long meetings (1+ hours)                   |
 
 **Pros:**
+
 - Real-time feedback during recording
 - Lower memory footprint on client and server
 - Better for long-duration sessions
 - Graceful handling of network interruptions
 
 **Cons:**
+
 - More complex implementation
 - Requires WebSocket infrastructure
 - Slightly higher server load for concurrent sessions
 
 ### Upload Approach (Alternative)
 
-| Aspect | Details |
-|--------|---------|
-| **Latency** | High (30-60 seconds post-recording) |
-| **User Experience** | Batch processing, delayed feedback |
-| **Memory Usage** | High (entire audio in memory) |
-| **Scalability** | Medium (limited by upload size) |
-| **Network** | Burst bandwidth usage |
-| **Reliability** | Fragile (upload failures require retry) |
-| **Use Case** | Short recordings (<10 minutes) |
+| Aspect              | Details                                 |
+| ------------------- | --------------------------------------- |
+| **Latency**         | High (30-60 seconds post-recording)     |
+| **User Experience** | Batch processing, delayed feedback      |
+| **Memory Usage**    | High (entire audio in memory)           |
+| **Scalability**     | Medium (limited by upload size)         |
+| **Network**         | Burst bandwidth usage                   |
+| **Reliability**     | Fragile (upload failures require retry) |
+| **Use Case**        | Short recordings (<10 minutes)          |
 
 **Pros:**
+
 - Simpler implementation
 - Standard HTTP infrastructure
 - Easier error handling
 
 **Cons:**
+
 - No real-time feedback
 - Memory constraints for long sessions
 - Poor user experience for extended meetings
@@ -141,25 +147,30 @@ sequenceDiagram
    \`\`\`
 
 3. **Set up environment variables**
-   
+
    Create a \`.env.local\` file in the root directory:
    \`\`\`env
+
    # Database
+
    DATABASE_URL="postgresql://username:password@localhost:5432/scribeai"
-   
+
    # Better Auth
+
    BETTER_AUTH_SECRET="your-secret-key-min-32-chars"
    BETTER_AUTH_URL="http://localhost:9002"
-   
+
    # Google Gemini API
+
    GOOGLE_GEMINI_API_KEY="your-gemini-api-key"
-   
+
    # Environment
+
    NODE_ENV="development"
    \`\`\`
 
 4. **Set up the database**
-   
+
    Run Prisma migrations to create database tables:
    \`\`\`bash
    npx prisma migrate dev --name init
@@ -172,7 +183,7 @@ sequenceDiagram
    \`\`\`
 
 6. **Open your browser**
-   
+
    Navigate to [http://localhost:9002](http://localhost:9002)
 
 ### Database Setup Options
@@ -181,10 +192,10 @@ sequenceDiagram
 
 \`\`\`bash
 docker run --name scribeai-postgres \\
-  -e POSTGRES_PASSWORD=password \\
-  -e POSTGRES_DB=scribeai \\
-  -p 5432:5432 \\
-  -d postgres:16
+-e POSTGRES_PASSWORD=password \\
+-e POSTGRES_DB=scribeai \\
+-p 5432:5432 \\
+-d postgres:16
 \`\`\`
 
 #### Option 2: Cloud Database (Supabase)
@@ -244,42 +255,42 @@ Follow the prompts to create a free Prisma Postgres database.
 \`\`\`
 scribeai/
 ├── src/
-│   ├── app/                    # Next.js App Router pages
-│   │   ├── api/               # API routes
-│   │   │   ├── auth/         # Authentication endpoints
-│   │   │   └── sessions/     # Session management
-│   │   ├── dashboard/         # Dashboard pages
-│   │   └── layout.tsx         # Root layout
-│   ├── components/            # React components
-│   │   ├── ui/               # Reusable UI components
-│   │   └── recording-interface.tsx
-│   ├── hooks/                 # Custom React hooks
-│   │   └── use-audio-recorder.ts
-│   ├── lib/                   # Utility libraries
-│   │   ├── auth.ts           # Better Auth config
-│   │   ├── prisma.ts         # Prisma client
-│   │   └── utils.ts          # Helper functions
-│   ├── server/                # Server-side code
-│   │   └── services/         # Business logic
-│   │       └── transcription.ts
-│   └── ai/                    # AI/Genkit configuration
+│ ├── app/ # Next.js App Router pages
+│ │ ├── api/ # API routes
+│ │ │ ├── auth/ # Authentication endpoints
+│ │ │ └── sessions/ # Session management
+│ │ ├── dashboard/ # Dashboard pages
+│ │ └── layout.tsx # Root layout
+│ ├── components/ # React components
+│ │ ├── ui/ # Reusable UI components
+│ │ └── recording-interface.tsx
+│ ├── hooks/ # Custom React hooks
+│ │ └── use-audio-recorder.ts
+│ ├── lib/ # Utility libraries
+│ │ ├── auth.ts # Better Auth config
+│ │ ├── prisma.ts # Prisma client
+│ │ └── utils.ts # Helper functions
+│ ├── server/ # Server-side code
+│ │ └── services/ # Business logic
+│ │ └── transcription.ts
+│ └── ai/ # AI/Genkit configuration
 ├── prisma/
-│   └── schema.prisma          # Database schema
-├── server.js                  # Custom Next.js server
+│ └── schema.prisma # Database schema
+├── server.js # Custom Next.js server
 └── package.json
 \`\`\`
 
 ### Available Scripts
 
 \`\`\`bash
-npm run dev              # Start development server with Socket.io
-npm run build            # Build for production
-npm run start            # Start production server
-npm run lint             # Run ESLint
-npm run typecheck        # Run TypeScript compiler check
-npm run prisma:generate  # Generate Prisma client
-npm run prisma:migrate   # Run database migrations
-npm run prisma:studio    # Open Prisma Studio (DB GUI)
+npm run dev # Start development server with Socket.io
+npm run build # Build for production
+npm run start # Start production server
+npm run lint # Run ESLint
+npm run typecheck # Run TypeScript compiler check
+npm run prisma:generate # Generate Prisma client
+npm run prisma:migrate # Run database migrations
+npm run prisma:studio # Open Prisma Studio (DB GUI)
 \`\`\`
 
 ### Key Technologies & Patterns
@@ -287,6 +298,7 @@ npm run prisma:studio    # Open Prisma Studio (DB GUI)
 #### Audio Capture
 
 Uses the **MediaRecorder API** with 30-second chunking:
+
 - Supports WebM/Opus encoding
 - Automatic chunk emission
 - Graceful handling of stream interruptions
@@ -294,6 +306,7 @@ Uses the **MediaRecorder API** with 30-second chunking:
 #### Real-time Communication
 
 **Socket.io** events:
+
 - \`start-session\`: Initialize recording
 - \`audio-chunk\`: Stream audio data
 - \`transcription-update\`: Receive live transcripts
@@ -303,6 +316,7 @@ Uses the **MediaRecorder API** with 30-second chunking:
 #### State Management
 
 React hooks with TypeScript for type-safe state:
+
 - \`useAudioRecorder\`: Main recording logic
 - \`useSession\`: Authentication state
 - \`useToast\`: User notifications
@@ -360,11 +374,13 @@ For a 1-hour recording session:
 ### Scalability Considerations
 
 **Concurrent Sessions:**
+
 - Socket.io handles 10,000+ concurrent connections
 - Database connection pooling (Prisma default: 10 connections)
 - Gemini API rate limits: 60 requests/minute (free tier)
 
 **Recommendations for Production:**
+
 - Use Redis for session state management
 - Implement queue system (Bull/BullMQ) for transcription jobs
 - Add CDN for static assets
@@ -382,6 +398,7 @@ For a 1-hour recording session:
 ## 🌐 Deployment to Vercel
 
 ### Prerequisites
+
 - GitHub account
 - Vercel account (free tier available)
 - Supabase database (or any PostgreSQL database)
@@ -390,6 +407,7 @@ For a 1-hour recording session:
 ### Step-by-Step Deployment
 
 1. **Push your code to GitHub**
+
    ```bash
    git init
    git add .
@@ -406,9 +424,9 @@ For a 1-hour recording session:
    - Vercel will auto-detect Next.js
 
 3. **Configure Environment Variables**
-   
+
    In Vercel dashboard, add these environment variables:
-   
+
    ```
    DATABASE_URL=postgresql://postgres.xxx:password@aws-1-ap-south-1.pooler.supabase.com:5432/postgres
    GOOGLE_GEMINI_API_KEY=your-gemini-api-key
@@ -483,6 +501,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For issues, questions, or suggestions:
+
 - Open an issue on GitHub
 - Email: support@scribeai.example.com
 - Twitter: [@scribeai](https://twitter.com/scribeai)

@@ -6,7 +6,7 @@ import { processAudioChunk, generateSummary } from './services/transcription';
 /**
  * WebSocket server for real-time audio streaming and transcription
  * Handles audio chunks, transcription updates, and session state management
- * 
+ *
  * Architecture:
  * 1. Client captures audio with MediaRecorder (30s chunks)
  * 2. Audio chunks sent via Socket.io to server
@@ -16,11 +16,14 @@ import { processAudioChunk, generateSummary } from './services/transcription';
  */
 export class SocketServer {
   private io: SocketIOServer;
-  private activeSessions: Map<string, { 
-    sessionId: string; 
-    startTime: Date;
-    audioSource: string;
-  }> = new Map();
+  private activeSessions: Map<
+    string,
+    {
+      sessionId: string;
+      startTime: Date;
+      audioSource: string;
+    }
+  > = new Map();
 
   constructor(server: HTTPServer) {
     this.io = new SocketIOServer(server, {
@@ -43,64 +46,75 @@ export class SocketServer {
       console.log(`✅ Client connected: ${socket.id}`);
 
       // Start recording session
-      socket.on('start-recording', async (data: { sessionId: string; audioSource: string; startTime: string }) => {
-        try {
-          console.log(`🎙️ Starting recording session: ${data.sessionId}`);
-          
-          this.activeSessions.set(data.sessionId, {
-            sessionId: data.sessionId,
-            startTime: new Date(data.startTime),
-            audioSource: data.audioSource,
-          });
+      socket.on(
+        'start-recording',
+        async (data: { sessionId: string; audioSource: string; startTime: string }) => {
+          try {
+            console.log(`🎙️ Starting recording session: ${data.sessionId}`);
 
-          socket.join(data.sessionId); // Join room for this session
+            this.activeSessions.set(data.sessionId, {
+              sessionId: data.sessionId,
+              startTime: new Date(data.startTime),
+              audioSource: data.audioSource,
+            });
 
-          socket.emit('recording-started', {
-            sessionId: data.sessionId,
-            status: 'recording',
-          });
+            socket.join(data.sessionId); // Join room for this session
 
-          console.log(`✅ Session started: ${data.sessionId}`);
-        } catch (error) {
-          console.error('❌ Error starting session:', error);
-          socket.emit('error', 'Failed to start session');
+            socket.emit('recording-started', {
+              sessionId: data.sessionId,
+              status: 'recording',
+            });
+
+            console.log(`✅ Session started: ${data.sessionId}`);
+          } catch (error) {
+            console.error('❌ Error starting session:', error);
+            socket.emit('error', 'Failed to start session');
+          }
         }
-      });
+      );
 
       // Receive audio chunk
-      socket.on('audio-chunk', async (data: { 
-        sessionId: string; 
-        chunk: Buffer; 
-        chunkIndex: number;
-        timestamp: string;
-      }) => {
-        const sessionInfo = this.activeSessions.get(data.sessionId);
-        if (!sessionInfo) {
-          socket.emit('error', 'No active session');
-          return;
-        }
-
-        try {
-          console.log(`📦 Received audio chunk ${data.chunkIndex} for session ${data.sessionId}, size: ${data.chunk.length} bytes`);
-
-          // Process chunk for transcription with Gemini
-          const transcriptSegment = await processAudioChunk(
-            data.chunk,
-            data.sessionId,
-            data.chunkIndex
-          );
-
-          if (transcriptSegment) {
-            console.log(`✅ Transcription generated for chunk ${data.chunkIndex}:`, transcriptSegment.text.substring(0, 50) + '...');
-            
-            // Emit transcription to all clients in this session room
-            this.io.to(data.sessionId).emit('transcript-segment', transcriptSegment);
+      socket.on(
+        'audio-chunk',
+        async (data: {
+          sessionId: string;
+          chunk: Buffer;
+          chunkIndex: number;
+          timestamp: string;
+        }) => {
+          const sessionInfo = this.activeSessions.get(data.sessionId);
+          if (!sessionInfo) {
+            socket.emit('error', 'No active session');
+            return;
           }
-        } catch (error) {
-          console.error(`❌ Error processing audio chunk ${data.chunkIndex}:`, error);
-          socket.emit('error', 'Failed to process audio chunk');
+
+          try {
+            console.log(
+              `📦 Received audio chunk ${data.chunkIndex} for session ${data.sessionId}, size: ${data.chunk.length} bytes`
+            );
+
+            // Process chunk for transcription with Gemini
+            const transcriptSegment = await processAudioChunk(
+              data.chunk,
+              data.sessionId,
+              data.chunkIndex
+            );
+
+            if (transcriptSegment) {
+              console.log(
+                `✅ Transcription generated for chunk ${data.chunkIndex}:`,
+                transcriptSegment.text.substring(0, 50) + '...'
+              );
+
+              // Emit transcription to all clients in this session room
+              this.io.to(data.sessionId).emit('transcript-segment', transcriptSegment);
+            }
+          } catch (error) {
+            console.error(`❌ Error processing audio chunk ${data.chunkIndex}:`, error);
+            socket.emit('error', 'Failed to process audio chunk');
+          }
         }
-      });
+      );
 
       // Pause recording
       socket.on('pause-recording', async (data: { sessionId: string }) => {
@@ -121,14 +135,14 @@ export class SocketServer {
 
         try {
           console.log(`⏹️ Stopping session: ${data.sessionId}`);
-          
-          this.io.to(data.sessionId).emit('processing-complete', { 
-            sessionId: data.sessionId 
+
+          this.io.to(data.sessionId).emit('processing-complete', {
+            sessionId: data.sessionId,
           });
 
           // Clean up active session
           this.activeSessions.delete(data.sessionId);
-          
+
           console.log(`✅ Session stopped: ${data.sessionId}`);
         } catch (error) {
           console.error('❌ Error stopping session:', error);
@@ -148,4 +162,3 @@ export class SocketServer {
     return this.io;
   }
 }
-

@@ -14,10 +14,7 @@ export async function POST(request: NextRequest) {
     const { email, password } = body;
 
     if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
     // Find user
@@ -26,10 +23,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
     // Create or update session
@@ -53,10 +47,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Signin error:', error);
-    return NextResponse.json(
-      { error: 'Failed to sign in' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to sign in' }, { status: 500 });
   }
 }
-

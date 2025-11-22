@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -83,12 +83,8 @@ export default function SignUpPage() {
           <div className="flex items-center justify-center mb-4">
             <BotMessageSquare className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold font-headline">
-            Create an Account
-          </CardTitle>
-          <CardDescription>
-            Get started with ScribeAI today
-          </CardDescription>
+          <CardTitle className="text-2xl font-bold font-headline">Create an Account</CardTitle>
+          <CardDescription>Get started with ScribeAI today</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -133,9 +129,7 @@ export default function SignUpPage() {
                 disabled={isLoading}
                 minLength={8}
               />
-              <p className="text-xs text-muted-foreground">
-                Must be at least 8 characters
-              </p>
+              <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -151,11 +145,7 @@ export default function SignUpPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -167,10 +157,7 @@ export default function SignUpPage() {
             </Button>
             <div className="text-sm text-center text-muted-foreground">
               Already have an account?{' '}
-              <Link
-                href="/login"
-                className="text-primary hover:underline font-medium"
-              >
+              <Link href="/login" className="text-primary hover:underline font-medium">
                 Sign in
               </Link>
             </div>
@@ -180,4 +167,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-

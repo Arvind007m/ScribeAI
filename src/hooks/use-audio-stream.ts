@@ -1,9 +1,12 @@
-"use client";
+'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Socket } from 'socket.io-client';
 import { getSocket } from '@/lib/socket-client';
-import { setSessionId as setGlobalSessionId, getSessionId as getGlobalSessionId } from '@/lib/transcript-store';
+import {
+  setSessionId as setGlobalSessionId,
+  getSessionId as getGlobalSessionId,
+} from '@/lib/transcript-store';
 
 interface UseAudioStreamOptions {
   onTranscriptUpdate?: (transcript: { speaker: string; text: string; timestamp: string }) => void;
@@ -19,11 +22,11 @@ interface TranscriptSegment {
 
 export function useAudioStream(options: UseAudioStreamOptions = {}) {
   const { onTranscriptUpdate, onError, chunkDuration = 30000 } = options; // 30 seconds default
-  
+
   const [isRecording, setIsRecording] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -82,145 +85,155 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
   }, []);
 
   // Start recording
-  const startRecording = useCallback(async (audioSource: 'microphone' | 'tab-audio' = 'microphone') => {
-    try {
-      if (!socketRef.current?.connected) {
-        throw new Error('Socket.io not connected. Please wait and try again.');
-      }
-
-      let stream: MediaStream;
-
-      if (audioSource === 'tab-audio') {
-        // Capture tab audio with screen share (video required by some browsers)
-        const displayStream = await navigator.mediaDevices.getDisplayMedia({
-          video: true, // Required by Chrome
-          audio: {
-            echoCancellation: false,
-            noiseSuppression: false,
-            autoGainControl: false,
-          },
-        });
-
-        // Check if audio track exists
-        const audioTracks = displayStream.getAudioTracks();
-        if (audioTracks.length === 0) {
-          displayStream.getTracks().forEach(track => track.stop());
-          throw new Error('No audio track found. Please CHECK "Share tab audio" when selecting the tab.');
+  const startRecording = useCallback(
+    async (audioSource: 'microphone' | 'tab-audio' = 'microphone') => {
+      try {
+        if (!socketRef.current?.connected) {
+          throw new Error('Socket.io not connected. Please wait and try again.');
         }
 
-        console.log('✅ Tab audio captured:', audioTracks[0].label);
+        let stream: MediaStream;
 
-        // Create new stream with only audio (discard video)
-        stream = new MediaStream(audioTracks);
-        
-        // Stop video tracks to save resources
-        displayStream.getVideoTracks().forEach(track => track.stop());
-      } else {
-        // Capture microphone
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            sampleRate: 44100,
-          },
-        });
-      }
+        if (audioSource === 'tab-audio') {
+          // Capture tab audio with screen share (video required by some browsers)
+          const displayStream = await navigator.mediaDevices.getDisplayMedia({
+            video: true, // Required by Chrome
+            audio: {
+              echoCancellation: false,
+              noiseSuppression: false,
+              autoGainControl: false,
+            },
+          });
 
-      streamRef.current = stream;
-
-      // Create MediaRecorder with appropriate format
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : 'audio/webm';
-
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType,
-        audioBitsPerSecond: 128000,
-      });
-
-      mediaRecorderRef.current = mediaRecorder;
-      chunkCountRef.current = 0;
-
-      // Generate session ID
-      const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      setSessionId(newSessionId);
-      setGlobalSessionId(newSessionId); // Store in global (survives HMR)
-      console.log('🆔 Session ID set (local + global):', newSessionId);
-
-      // Emit start-recording event
-      socketRef.current?.emit('start-recording', {
-        sessionId: newSessionId,
-        audioSource,
-        startTime: new Date().toISOString(),
-      });
-
-      // Handle audio data chunks
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          const chunkIndex = chunkCountRef.current++;
-          
-          console.log(`📦 Audio chunk ${chunkIndex} available, size: ${event.data.size} bytes`);
-          
-          if (!socketRef.current?.connected) {
-            console.error('❌ Socket not connected, attempting to reconnect...');
-            socketRef.current?.connect();
-            
-            // Wait a bit for reconnection
-            setTimeout(() => {
-              if (!socketRef.current?.connected) {
-                console.error('❌ Failed to reconnect, chunk lost');
-                return;
-              }
-            }, 1000);
+          // Check if audio track exists
+          const audioTracks = displayStream.getAudioTracks();
+          if (audioTracks.length === 0) {
+            displayStream.getTracks().forEach((track) => track.stop());
+            throw new Error(
+              'No audio track found. Please CHECK "Share tab audio" when selecting the tab.'
+            );
           }
-          
-          // Convert Blob to ArrayBuffer and send via Socket.io
-          event.data.arrayBuffer().then((arrayBuffer) => {
-            const uint8Array = new Uint8Array(arrayBuffer);
-            
-            console.log(`📤 Sending audio chunk ${chunkIndex}, size: ${uint8Array.length} bytes`);
-            
-            socketRef.current?.emit('audio-chunk', {
-              sessionId: newSessionId,
-              chunk: Array.from(uint8Array), // Convert to regular array for Socket.io
-              chunkIndex,
-              timestamp: new Date().toISOString(),
-            });
-          }).catch((error) => {
-            console.error(`❌ Error processing chunk ${chunkIndex}:`, error);
+
+          console.log('✅ Tab audio captured:', audioTracks[0].label);
+
+          // Create new stream with only audio (discard video)
+          stream = new MediaStream(audioTracks);
+
+          // Stop video tracks to save resources
+          displayStream.getVideoTracks().forEach((track) => track.stop());
+        } else {
+          // Capture microphone
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              sampleRate: 44100,
+            },
           });
         }
-      };
 
-      mediaRecorder.onerror = (event: any) => {
-        console.error('MediaRecorder error:', event.error);
-        onError?.(`Recording error: ${event.error?.message || 'Unknown error'}`);
-      };
+        streamRef.current = stream;
 
-      mediaRecorder.onstop = () => {
-        console.log('MediaRecorder stopped');
-        setIsRecording(false);
-      };
+        // Create MediaRecorder with appropriate format
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm';
 
-      // Start recording with time slicing (chunks every 30s)
-      mediaRecorder.start(chunkDuration);
-      setIsRecording(true);
+        const mediaRecorder = new MediaRecorder(stream, {
+          mimeType,
+          audioBitsPerSecond: 128000,
+        });
 
-      console.log(`Recording started with ${chunkDuration}ms chunks`);
-    } catch (error: any) {
-      console.error('Failed to start recording:', error);
-      onError?.(error.message || 'Failed to start recording');
-      throw error;
-    }
-  }, [connectSocket, chunkDuration, onError]);
+        mediaRecorderRef.current = mediaRecorder;
+        chunkCountRef.current = 0;
+
+        // Generate session ID
+        const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        setSessionId(newSessionId);
+        setGlobalSessionId(newSessionId); // Store in global (survives HMR)
+        console.log('🆔 Session ID set (local + global):', newSessionId);
+
+        // Emit start-recording event
+        socketRef.current?.emit('start-recording', {
+          sessionId: newSessionId,
+          audioSource,
+          startTime: new Date().toISOString(),
+        });
+
+        // Handle audio data chunks
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            const chunkIndex = chunkCountRef.current++;
+
+            console.log(`📦 Audio chunk ${chunkIndex} available, size: ${event.data.size} bytes`);
+
+            if (!socketRef.current?.connected) {
+              console.error('❌ Socket not connected, attempting to reconnect...');
+              socketRef.current?.connect();
+
+              // Wait a bit for reconnection
+              setTimeout(() => {
+                if (!socketRef.current?.connected) {
+                  console.error('❌ Failed to reconnect, chunk lost');
+                  return;
+                }
+              }, 1000);
+            }
+
+            // Convert Blob to ArrayBuffer and send via Socket.io
+            event.data
+              .arrayBuffer()
+              .then((arrayBuffer) => {
+                const uint8Array = new Uint8Array(arrayBuffer);
+
+                console.log(
+                  `📤 Sending audio chunk ${chunkIndex}, size: ${uint8Array.length} bytes`
+                );
+
+                socketRef.current?.emit('audio-chunk', {
+                  sessionId: newSessionId,
+                  chunk: Array.from(uint8Array), // Convert to regular array for Socket.io
+                  chunkIndex,
+                  timestamp: new Date().toISOString(),
+                });
+              })
+              .catch((error) => {
+                console.error(`❌ Error processing chunk ${chunkIndex}:`, error);
+              });
+          }
+        };
+
+        mediaRecorder.onerror = (event: any) => {
+          console.error('MediaRecorder error:', event.error);
+          onError?.(`Recording error: ${event.error?.message || 'Unknown error'}`);
+        };
+
+        mediaRecorder.onstop = () => {
+          console.log('MediaRecorder stopped');
+          setIsRecording(false);
+        };
+
+        // Start recording with time slicing (chunks every 30s)
+        mediaRecorder.start(chunkDuration);
+        setIsRecording(true);
+
+        console.log(`Recording started with ${chunkDuration}ms chunks`);
+      } catch (error: any) {
+        console.error('Failed to start recording:', error);
+        onError?.(error.message || 'Failed to start recording');
+        throw error;
+      }
+    },
+    [connectSocket, chunkDuration, onError]
+  );
 
   // Stop recording
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
-      
+
       // Stop all tracks
-      streamRef.current?.getTracks().forEach(track => track.stop());
+      streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
 
       // Emit stop-recording event
@@ -271,4 +284,3 @@ export function useAudioStream(options: UseAudioStreamOptions = {}) {
     cleanup,
   };
 }
-

@@ -12,7 +12,9 @@ export function checkAudioSupport() {
     mediaRecorder: typeof MediaRecorder !== 'undefined',
     getUserMedia: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
     getDisplayMedia: !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia),
-    audioContext: typeof AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined',
+    audioContext:
+      typeof AudioContext !== 'undefined' ||
+      typeof (window as any).webkitAudioContext !== 'undefined',
   };
 }
 
@@ -21,12 +23,7 @@ export function checkAudioSupport() {
  * @returns Array of supported MIME types
  */
 export function getSupportedMimeTypes(): string[] {
-  const types = [
-    'audio/webm;codecs=opus',
-    'audio/webm',
-    'audio/ogg;codecs=opus',
-    'audio/mp4',
-  ];
+  const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
 
   return types.filter((type) => MediaRecorder.isTypeSupported(type));
 }
@@ -229,4 +226,3 @@ export function formatFileSize(bytes: number): string {
 
   return `${size.toFixed(1)} ${units[unitIndex]}`;
 }
-

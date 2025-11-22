@@ -26,7 +26,7 @@ export const SESSIONS: Session[] = [
       {
         speaker: 'Alice',
         timestamp: '00:05:00',
-        text: 'Good point, Charlie. Let\'s earmark that. For action items: Bob, you will lead the marketing stream. Charlie, please draft the initial social media copy. I will set up the project management board by end of day.',
+        text: "Good point, Charlie. Let's earmark that. For action items: Bob, you will lead the marketing stream. Charlie, please draft the initial social media copy. I will set up the project management board by end of day.",
       },
     ],
   },
@@ -40,7 +40,7 @@ export const SESSIONS: Session[] = [
       {
         speaker: 'Dave',
         timestamp: '00:01:05',
-        text: 'Okay team, weekly sync time. Let\'s go over sprint progress. I\'m currently blocked on the payment gateway integration. The API is returning an unexpected error.',
+        text: "Okay team, weekly sync time. Let's go over sprint progress. I'm currently blocked on the payment gateway integration. The API is returning an unexpected error.",
       },
       {
         speaker: 'Eve',
@@ -50,7 +50,7 @@ export const SESSIONS: Session[] = [
       {
         speaker: 'Dave',
         timestamp: '00:02:45',
-        text: 'I haven\'t. That could be it. I\'ll take the action item to investigate the new docs and report back by tomorrow morning.',
+        text: "I haven't. That could be it. I'll take the action item to investigate the new docs and report back by tomorrow morning.",
       },
     ],
   },
@@ -64,7 +64,7 @@ export const SESSIONS: Session[] = [
       {
         speaker: 'Frank',
         timestamp: '00:01:20',
-        text: 'Here are the latest mockups for the new dashboard UI. I\'m looking for feedback on the overall layout and color scheme.',
+        text: "Here are the latest mockups for the new dashboard UI. I'm looking for feedback on the overall layout and color scheme.",
       },
       {
         speaker: 'Grace',
@@ -74,7 +74,7 @@ export const SESSIONS: Session[] = [
       {
         speaker: 'Frank',
         timestamp: '00:04:15',
-        text: 'Excellent point, Grace. Easy fix. I\'ll make that adjustment. Any other thoughts?',
+        text: "Excellent point, Grace. Easy fix. I'll make that adjustment. Any other thoughts?",
       },
       {
         speaker: 'Heidi',

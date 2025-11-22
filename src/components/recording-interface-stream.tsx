@@ -1,14 +1,8 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Mic,
@@ -29,14 +23,14 @@ import { Separator } from './ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAudioStream } from '@/hooks/use-audio-stream';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  addTranscript, 
-  getTranscripts, 
+import {
+  addTranscript,
+  getTranscripts,
   clearTranscripts,
   setSessionId as setGlobalSessionId,
   getSessionId as getGlobalSessionId,
   setStartTime as setGlobalStartTime,
-  getStartTime as getGlobalStartTime
+  getStartTime as getGlobalStartTime,
 } from '@/lib/transcript-store';
 
 type SessionState = 'idle' | 'recording' | 'paused' | 'processing' | 'completed';
@@ -51,7 +45,7 @@ interface TranscriptSegment {
 export function RecordingInterfaceStream() {
   const { toast } = useToast();
   const router = useRouter();
-  
+
   const [sessionState, setSessionState] = useState<SessionState>('idle');
   const [audioSource, setAudioSource] = useState<AudioSource>('microphone');
   const [transcripts, setTranscripts] = useState<TranscriptSegment[]>([]);
@@ -79,9 +73,9 @@ export function RecordingInterfaceStream() {
     },
     onError: (error) => {
       toast({
-        title: "Error",
+        title: 'Error',
         description: error,
-        variant: "destructive",
+        variant: 'destructive',
       });
     },
     chunkDuration: 30000, // 30 seconds
@@ -107,27 +101,28 @@ export function RecordingInterfaceStream() {
       const now = new Date();
       setStartTime(now);
       setGlobalStartTime(now); // Store in global (survives HMR)
-      
+
       if (audioSource === 'tab-audio') {
         toast({
-          title: "Select Tab Audio",
-          description: "In the popup, select the tab you want to record and CHECK 'Share tab audio' before clicking Share.",
+          title: 'Select Tab Audio',
+          description:
+            "In the popup, select the tab you want to record and CHECK 'Share tab audio' before clicking Share.",
           duration: 5000,
         });
       }
-      
+
       await startRecording(audioSource);
       setSessionState('recording');
-      
+
       toast({
-        title: "Recording Started",
+        title: 'Recording Started',
         description: `Capturing audio from ${audioSource === 'microphone' ? 'microphone' : 'tab audio'}. Audio chunks sent every 30 seconds for AI transcription.`,
       });
     } catch (error: any) {
       toast({
-        title: "Failed to Start",
-        description: error.message || "Could not start recording",
-        variant: "destructive",
+        title: 'Failed to Start',
+        description: error.message || 'Could not start recording',
+        variant: 'destructive',
       });
     }
   };
@@ -136,8 +131,8 @@ export function RecordingInterfaceStream() {
     pauseRecording();
     setSessionState('paused');
     toast({
-      title: "Recording Paused",
-      description: "Audio capture paused. Click Resume to continue.",
+      title: 'Recording Paused',
+      description: 'Audio capture paused. Click Resume to continue.',
     });
   };
 
@@ -145,25 +140,25 @@ export function RecordingInterfaceStream() {
     resumeRecording();
     setSessionState('recording');
     toast({
-      title: "Recording Resumed",
-      description: "Audio capture resumed.",
+      title: 'Recording Resumed',
+      description: 'Audio capture resumed.',
     });
   };
 
   const handleStop = async () => {
     console.log('🛑 handleStop called');
     console.log('Current sessionId (local):', sessionId);
-    
+
     // Get sessionId from global store if local is null (HMR issue)
     const actualSessionId = sessionId || getGlobalSessionId();
     console.log('Actual sessionId (global fallback):', actualSessionId);
-    
+
     stopRecording();
     setSessionState('processing');
-    
+
     toast({
-      title: "Processing",
-      description: "Generating AI summary with Gemini...",
+      title: 'Processing',
+      description: 'Generating AI summary with Gemini...',
     });
 
     try {
@@ -176,10 +171,10 @@ export function RecordingInterfaceStream() {
       const allTranscripts = getTranscripts();
       console.log('📝 Transcripts from global store:', allTranscripts.length);
       console.log('📝 Transcripts from state:', transcripts.length);
-      
+
       // Use global store as it survives HMR
       const transcriptsToUse = allTranscripts.length > 0 ? allTranscripts : transcripts;
-      
+
       const fullTranscript = transcriptsToUse
         .map((t) => `[${t.timestamp}] ${t.speaker}: ${t.text}`)
         .join('\n');
@@ -208,21 +203,23 @@ export function RecordingInterfaceStream() {
       console.log('📊 Summary set in state');
 
       // Save to database if user is logged in
-      console.log('🔍 Checking database save conditions:', { 
-        hasUser: !!user, 
+      console.log('🔍 Checking database save conditions:', {
+        hasUser: !!user,
         userId: user?.id,
-        hasSessionId: !!actualSessionId, 
-        sessionId: actualSessionId 
+        hasSessionId: !!actualSessionId,
+        sessionId: actualSessionId,
       });
-      
+
       if (user && actualSessionId) {
         const actualStartTime = startTime || getGlobalStartTime();
-        const duration = actualStartTime ? Math.floor((Date.now() - actualStartTime.getTime()) / 1000) : 0;
-        
+        const duration = actualStartTime
+          ? Math.floor((Date.now() - actualStartTime.getTime()) / 1000)
+          : 0;
+
         console.log('💾 Saving session to database...');
         console.log('User ID:', user.id);
         console.log('Transcripts to save:', transcriptsToUse.length);
-        
+
         const saveResponse = await fetch('/api/sessions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -235,7 +232,7 @@ export function RecordingInterfaceStream() {
             duration,
           }),
         });
-        
+
         if (saveResponse.ok) {
           const savedData = await saveResponse.json();
           console.log('✅ Session saved to database:', savedData.session.id);
@@ -243,21 +240,24 @@ export function RecordingInterfaceStream() {
           console.error('❌ Failed to save session:', await saveResponse.text());
         }
       } else {
-        console.warn('⚠️ Not saving to database - user or sessionId missing:', { user: !!user, sessionId });
+        console.warn('⚠️ Not saving to database - user or sessionId missing:', {
+          user: !!user,
+          sessionId,
+        });
       }
 
       setSessionState('completed');
       toast({
-        title: "Processing Complete",
-        description: "Your session summary is ready!",
+        title: 'Processing Complete',
+        description: 'Your session summary is ready!',
       });
     } catch (error) {
-      console.error("Error processing session:", error);
+      console.error('Error processing session:', error);
       setSessionState('idle');
       toast({
-        title: "Error",
-        description: "Failed to process session.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to process session.',
+        variant: 'destructive',
       });
     }
   };
@@ -288,8 +288,8 @@ export function RecordingInterfaceStream() {
     URL.revokeObjectURL(url);
 
     toast({
-      title: "Exported",
-      description: "Transcript downloaded successfully.",
+      title: 'Exported',
+      description: 'Transcript downloaded successfully.',
     });
   };
 
@@ -351,9 +351,7 @@ export function RecordingInterfaceStream() {
       {!isConnected && (
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Connection lost. Please refresh the page.
-          </AlertDescription>
+          <AlertDescription>Connection lost. Please refresh the page.</AlertDescription>
         </Alert>
       )}
 
@@ -375,7 +373,8 @@ export function RecordingInterfaceStream() {
                   Ready to Record!
                 </h2>
                 <p className="text-muted-foreground text-lg max-w-md">
-                  Choose your audio source and start capturing your meetings with AI-powered transcription
+                  Choose your audio source and start capturing your meetings with AI-powered
+                  transcription
                 </p>
               </div>
 
@@ -387,8 +386,8 @@ export function RecordingInterfaceStream() {
               >
                 <div className="relative">
                   <RadioGroupItem value="microphone" id="microphone" className="peer sr-only" />
-                  <Label 
-                    htmlFor="microphone" 
+                  <Label
+                    htmlFor="microphone"
                     className="flex flex-col items-center gap-3 p-6 border-2 rounded-xl cursor-pointer transition-all hover:border-primary/50 hover:bg-primary/5 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:shadow-lg"
                   >
                     <Mic className="h-8 w-8 text-primary" />
@@ -397,8 +396,8 @@ export function RecordingInterfaceStream() {
                 </div>
                 <div className="relative">
                   <RadioGroupItem value="tab-audio" id="tab-audio" className="peer sr-only" />
-                  <Label 
-                    htmlFor="tab-audio" 
+                  <Label
+                    htmlFor="tab-audio"
                     className="flex flex-col items-center gap-3 p-6 border-2 rounded-xl cursor-pointer transition-all hover:border-primary/50 hover:bg-primary/5 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:shadow-lg"
                   >
                     <ScreenShare className="h-8 w-8 text-primary" />
@@ -445,8 +444,8 @@ export function RecordingInterfaceStream() {
               {transcripts.length > 0 ? (
                 <div className="space-y-5">
                   {transcripts.map((segment, index) => (
-                    <div 
-                      key={index} 
+                    <div
+                      key={index}
                       className="group relative border-l-4 border-primary/40 pl-5 py-3 rounded-r-lg hover:border-primary hover:bg-primary/5 transition-all duration-200 hover:shadow-md"
                     >
                       <div className="flex items-center gap-2 mb-2">
@@ -485,10 +484,17 @@ export function RecordingInterfaceStream() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 text-primary"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                        <path d="M2 17l10 5 10-5" />
+                        <path d="M2 12l10 5 10-5" />
                       </svg>
                     </div>
                     <h3 className="text-xl font-bold font-headline bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -510,4 +516,3 @@ export function RecordingInterfaceStream() {
     </div>
   );
 }
-

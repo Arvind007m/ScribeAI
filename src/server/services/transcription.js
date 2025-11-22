@@ -3,7 +3,7 @@ const { ai } = require('../../ai/genkit');
 /**
  * Process audio chunk and generate transcription using Gemini
  * Implements speaker diarization and accurate transcription
- * 
+ *
  * @param {Buffer} audioData - Raw audio buffer (WebM format)
  * @param {string} sessionId - Recording session ID
  * @param {number} chunkIndex - Sequential chunk number
@@ -12,7 +12,7 @@ const { ai } = require('../../ai/genkit');
 async function processAudioChunk(audioData, sessionId, chunkIndex) {
   try {
     console.log(`🎯 Processing audio chunk ${chunkIndex}, size: ${audioData.length} bytes`);
-    
+
     // Convert audio buffer to base64 for Gemini API
     const audioBase64 = audioData.toString('base64');
 
@@ -53,11 +53,14 @@ CRITICAL INSTRUCTIONS:
       return null;
     }
 
-    console.log(`✅ Transcription received for chunk ${chunkIndex}:`, transcriptionText.substring(0, 100) + '...');
+    console.log(
+      `✅ Transcription received for chunk ${chunkIndex}:`,
+      transcriptionText.substring(0, 100) + '...'
+    );
 
     // Parse multiple speakers from the transcription
     // Format: [Speaker X]: text
-    const lines = transcriptionText.split('\n').filter(line => line.trim());
+    const lines = transcriptionText.split('\n').filter((line) => line.trim());
     const segments = [];
 
     for (const line of lines) {
@@ -94,7 +97,7 @@ CRITICAL INSTRUCTIONS:
       speaker: segment.speaker,
       text: segment.text,
       timestamp: index === 0 ? timestamp : timestamp, // Same timestamp for all segments in this chunk
-      startTime: startTime + (index * 1000), // Slight offset for ordering
+      startTime: startTime + index * 1000, // Slight offset for ordering
       chunkIndex,
     }));
   } catch (error) {
@@ -169,4 +172,3 @@ module.exports = {
   processAudioChunk,
   generateSummary,
 };
-

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
@@ -97,93 +97,95 @@ export function useAudioRecorder() {
   /**
    * Start recording session
    */
-  const startRecording = useCallback(async (userId: string, title?: string) => {
-    try {
-      setError(null);
-      setTranscript([]);
-      setSummary('');
-      chunkIndexRef.current = 0;
-      audioChunksRef.current = [];
+  const startRecording = useCallback(
+    async (userId: string, title?: string) => {
+      try {
+        setError(null);
+        setTranscript([]);
+        setSummary('');
+        chunkIndexRef.current = 0;
+        audioChunksRef.current = [];
 
-      // Initialize socket
-      initializeSocket();
+        // Initialize socket
+        initializeSocket();
 
-      // Get media stream based on audio source
-      let stream: MediaStream;
-      
-      if (audioSource === 'microphone') {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            sampleRate: 48000,
-          },
-        });
-      } else {
-        // Tab audio capture
-        stream = await navigator.mediaDevices.getDisplayMedia({
-          video: false,
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            sampleRate: 48000,
-          } as any,
-        });
-      }
+        // Get media stream based on audio source
+        let stream: MediaStream;
 
-      streamRef.current = stream;
-
-      // Create MediaRecorder
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : 'audio/webm';
-
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType,
-        audioBitsPerSecond: 128000,
-      });
-
-      mediaRecorderRef.current = mediaRecorder;
-
-      // Handle data available (chunk ready)
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-          
-          // Send chunk to server
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const arrayBuffer = reader.result as ArrayBuffer;
-            const buffer = Buffer.from(arrayBuffer);
-            
-            socketRef.current?.emit('audio-chunk', {
-              audioData: buffer,
-              chunkIndex: chunkIndexRef.current,
-              duration: 30000, // 30 seconds
-            });
-            
-            chunkIndexRef.current++;
-          };
-          reader.readAsArrayBuffer(event.data);
+        if (audioSource === 'microphone') {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              sampleRate: 48000,
+            },
+          });
+        } else {
+          // Tab audio capture
+          stream = await navigator.mediaDevices.getDisplayMedia({
+            video: false,
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              sampleRate: 48000,
+            } as any,
+          });
         }
-      };
 
-      // Start recording with 30-second chunks
-      mediaRecorder.start(30000);
+        streamRef.current = stream;
 
-      // Emit start session event
-      socketRef.current?.emit('start-session', {
-        userId,
-        audioSource,
-        title: title || `Session ${new Date().toLocaleString()}`,
-      });
+        // Create MediaRecorder
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm';
 
-    } catch (err: any) {
-      console.error('Error starting recording:', err);
-      setError(err.message || 'Failed to start recording');
-      setSessionState('idle');
-    }
-  }, [audioSource, initializeSocket]);
+        const mediaRecorder = new MediaRecorder(stream, {
+          mimeType,
+          audioBitsPerSecond: 128000,
+        });
+
+        mediaRecorderRef.current = mediaRecorder;
+
+        // Handle data available (chunk ready)
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+
+            // Send chunk to server
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const arrayBuffer = reader.result as ArrayBuffer;
+              const buffer = Buffer.from(arrayBuffer);
+
+              socketRef.current?.emit('audio-chunk', {
+                audioData: buffer,
+                chunkIndex: chunkIndexRef.current,
+                duration: 30000, // 30 seconds
+              });
+
+              chunkIndexRef.current++;
+            };
+            reader.readAsArrayBuffer(event.data);
+          }
+        };
+
+        // Start recording with 30-second chunks
+        mediaRecorder.start(30000);
+
+        // Emit start session event
+        socketRef.current?.emit('start-session', {
+          userId,
+          audioSource,
+          title: title || `Session ${new Date().toLocaleString()}`,
+        });
+      } catch (err: any) {
+        console.error('Error starting recording:', err);
+        setError(err.message || 'Failed to start recording');
+        setSessionState('idle');
+      }
+    },
+    [audioSource, initializeSocket]
+  );
 
   /**
    * Pause recording
@@ -211,7 +213,7 @@ export function useAudioRecorder() {
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
-      
+
       // Stop all tracks
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
@@ -266,4 +268,3 @@ export function useAudioRecorder() {
     resetSession,
   };
 }
-

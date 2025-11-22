@@ -1,5 +1,5 @@
-import { betterAuth } from "better-auth";
-import { prisma } from "./prisma";
+import { betterAuth } from 'better-auth';
+import { prisma } from './prisma';
 
 /**
  * Better Auth configuration
@@ -7,7 +7,7 @@ import { prisma } from "./prisma";
  */
 export const auth = betterAuth({
   database: {
-    provider: "prisma",
+    provider: 'prisma',
     prisma: prisma,
   },
   emailAndPassword: {
@@ -16,14 +16,13 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
       enabled: !!process.env.GOOGLE_CLIENT_ID,
     },
   },
-  secret: process.env.BETTER_AUTH_SECRET || "default-secret-change-in-production",
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:9002",
+  secret: process.env.BETTER_AUTH_SECRET || 'default-secret-change-in-production',
+  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:9002',
 });
 
 export type Session = typeof auth.$Infer.Session;
-

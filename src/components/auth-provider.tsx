@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isPending) {
       const isPublicPath = publicPaths.includes(pathname);
-      
+
       if (!session && !isPublicPath) {
         // Not authenticated and trying to access protected route
         router.push('/login');
@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Authenticated but on login/signup page
         router.push('/dashboard');
       }
-      
+
       setIsChecking(false);
     }
   }, [session, isPending, pathname, router]);
@@ -43,4 +43,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
-

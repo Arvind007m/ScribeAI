@@ -4,7 +4,7 @@ const { processAudioChunk, generateSummary } = require('./services/transcription
 /**
  * WebSocket server for real-time audio streaming and transcription
  * Handles audio chunks, transcription updates, and session state management
- * 
+ *
  * Architecture:
  * 1. Client captures audio with MediaRecorder (30s chunks)
  * 2. Audio chunks sent via Socket.io to server
@@ -38,7 +38,7 @@ class SocketServer {
       socket.on('start-recording', async (data) => {
         try {
           console.log(`🎙️ Starting recording session: ${data.sessionId}`);
-          
+
           this.activeSessions.set(data.sessionId, {
             sessionId: data.sessionId,
             startTime: new Date(data.startTime),
@@ -71,8 +71,10 @@ class SocketServer {
 
           // Convert array back to Buffer
           const audioBuffer = Buffer.from(data.chunk);
-          
-          console.log(`📦 Received audio chunk ${data.chunkIndex} for session ${data.sessionId}, size: ${audioBuffer.length} bytes`);
+
+          console.log(
+            `📦 Received audio chunk ${data.chunkIndex} for session ${data.sessionId}, size: ${audioBuffer.length} bytes`
+          );
 
           // Process chunk for transcription with Gemini
           const transcriptSegment = await processAudioChunk(
@@ -83,11 +85,17 @@ class SocketServer {
 
           if (transcriptSegment) {
             // transcriptSegment is now an array of segments (one per speaker)
-            const segments = Array.isArray(transcriptSegment) ? transcriptSegment : [transcriptSegment];
-            
-            console.log(`✅ Transcription generated for chunk ${data.chunkIndex}: ${segments.length} speaker segment(s)`);
-            console.log(`📤 Emitting ${segments.length} transcript(s) to session room: ${data.sessionId}`);
-            
+            const segments = Array.isArray(transcriptSegment)
+              ? transcriptSegment
+              : [transcriptSegment];
+
+            console.log(
+              `✅ Transcription generated for chunk ${data.chunkIndex}: ${segments.length} speaker segment(s)`
+            );
+            console.log(
+              `📤 Emitting ${segments.length} transcript(s) to session room: ${data.sessionId}`
+            );
+
             // Emit each segment separately so they appear on separate lines
             for (const segment of segments) {
               this.io.to(data.sessionId).emit('transcript-segment', segment);
@@ -122,14 +130,14 @@ class SocketServer {
 
         try {
           console.log(`⏹️ Stopping session: ${data.sessionId}`);
-          
-          this.io.to(data.sessionId).emit('processing-complete', { 
-            sessionId: data.sessionId 
+
+          this.io.to(data.sessionId).emit('processing-complete', {
+            sessionId: data.sessionId,
           });
 
           // Clean up active session
           this.activeSessions.delete(data.sessionId);
-          
+
           console.log(`✅ Session stopped: ${data.sessionId}`);
         } catch (error) {
           console.error('❌ Error stopping session:', error);
@@ -151,4 +159,3 @@ class SocketServer {
 }
 
 module.exports = { SocketServer };
-

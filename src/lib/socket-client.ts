@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { io, Socket } from 'socket.io-client';
 
@@ -8,7 +8,7 @@ let globalSocket: Socket | null = null;
 export function getSocket(): Socket {
   if (!globalSocket || !globalSocket.connected) {
     console.log('🔌 Creating new Socket.io connection...');
-    
+
     globalSocket = io('http://localhost:9002', {
       path: '/api/socket.io',
       transports: ['websocket', 'polling'],
@@ -47,4 +47,3 @@ export function disconnectSocket() {
     globalSocket = null;
   }
 }
-

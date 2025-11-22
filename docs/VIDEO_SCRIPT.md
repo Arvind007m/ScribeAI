@@ -122,12 +122,14 @@ This script guides you through creating a video demonstration of ScribeAI for th
 ## Recording Tips
 
 ### Video Settings
+
 - **Resolution:** 1920x1080 (1080p)
 - **Frame Rate:** 30 FPS
 - **Format:** MP4 (H.264)
 - **Audio:** Clear microphone, no background noise
 
 ### Screen Recording Tools
+
 - **Mac:** QuickTime Player, ScreenFlow
 - **Windows:** OBS Studio, Camtasia
 - **Cross-platform:** Loom (easiest, recommended)
@@ -162,6 +164,7 @@ This script guides you through creating a video demonstration of ScribeAI for th
 ## Backup Plan
 
 If live demo has issues:
+
 - Use pre-recorded audio file
 - Show screenshots with voiceover
 - Focus on code walkthrough instead
@@ -196,7 +199,7 @@ If live demo has issues:
 
 Use this if you need something to say during the demo:
 
-> "Hello everyone, welcome to our Q3 planning meeting. Today we'll discuss three main topics: the product roadmap, resource allocation, and timeline for the next quarter. 
+> "Hello everyone, welcome to our Q3 planning meeting. Today we'll discuss three main topics: the product roadmap, resource allocation, and timeline for the next quarter.
 >
 > First, regarding the product roadmap, we need to prioritize the mobile app features based on user feedback. The data shows that 60% of our users are requesting offline mode functionality.
 >
@@ -209,4 +212,3 @@ Use this if you need something to say during the demo:
 ---
 
 **Good luck with your video! 🎥**
-

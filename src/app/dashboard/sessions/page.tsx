@@ -1,14 +1,8 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Clock, Mic, ScreenShare } from 'lucide-react';
@@ -40,12 +34,12 @@ export default function SessionsPage() {
           setLoading(false);
           return;
         }
-        
+
         const user = JSON.parse(userStr);
         const response = await fetch(`/api/sessions?userId=${user.id}`);
-        
+
         if (!response.ok) throw new Error('Failed to fetch sessions');
-        
+
         const data = await response.json();
         setSessions(data.sessions);
       } catch (error) {
@@ -66,7 +60,7 @@ export default function SessionsPage() {
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes}m`;
     } else if (minutes > 0) {
@@ -99,7 +93,9 @@ export default function SessionsPage() {
       {sessions.length === 0 ? (
         <Card>
           <CardContent className="flex items-center justify-center h-48">
-            <p className="text-muted-foreground">No sessions yet. Start recording to create your first session!</p>
+            <p className="text-muted-foreground">
+              No sessions yet. Start recording to create your first session!
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -112,7 +108,10 @@ export default function SessionsPage() {
                     <CardTitle className="font-headline text-lg line-clamp-2">
                       {session.title}
                     </CardTitle>
-                    <Badge variant={session.status === 'completed' ? 'default' : 'secondary'} className="ml-2">
+                    <Badge
+                      variant={session.status === 'completed' ? 'default' : 'secondary'}
+                      className="ml-2"
+                    >
                       {session.status}
                     </Badge>
                   </div>
@@ -139,9 +138,7 @@ export default function SessionsPage() {
                     </span>
                   </div>
                   {session.summary && (
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {session.summary}
-                    </p>
+                    <p className="text-sm text-muted-foreground line-clamp-3">{session.summary}</p>
                   )}
                   {!session.summary && session.transcripts.length > 0 && (
                     <p className="text-sm text-muted-foreground line-clamp-3">
@@ -157,4 +154,3 @@ export default function SessionsPage() {
     </div>
   );
 }
-

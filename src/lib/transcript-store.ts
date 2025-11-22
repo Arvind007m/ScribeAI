@@ -38,4 +38,3 @@ export function setStartTime(startTime: Date | null) {
 export function getStartTime() {
   return globalStartTime;
 }
-

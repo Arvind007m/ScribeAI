@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -12,8 +13,15 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId');
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    // Validate userId
+    const userIdSchema = z.string().cuid();
+    const validationResult = userIdSchema.safeParse(userId);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: 'Valid User ID is required', details: validationResult.error.errors },
+        { status: 400 }
+      );
     }
 
     const sessions = await prisma.recordingSession.findMany({
@@ -44,14 +52,43 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, title, audioSource, transcript, summary, duration } = body;
 
-    if (!userId) {
+    // Validate request body with Zod
+    const createSessionSchema = z.object({
+      userId: z.string().cuid('Invalid user ID format'),
+      title: z.string().min(1, 'Title is required'),
+      audioSource: z.enum(['microphone', 'tab-audio']),
+      transcript: z
+        .array(
+          z.object({
+            speaker: z.string(),
+            text: z.string(),
+            timestamp: z.string(),
+            startTime: z.number().optional(),
+          })
+        )
+        .or(z.string())
+        .optional(),
+      summary: z.string().optional(),
+      duration: z.number().int().min(0),
+    });
+
+    const validationResult = createSessionSchema.safeParse(body);
+
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'User ID is required' },
+        {
+          error: 'Validation failed',
+          details: validationResult.error.errors.map((e) => ({
+            field: e.path.join('.'),
+            message: e.message,
+          })),
+        },
         { status: 400 }
       );
     }
+
+    const { userId, title, audioSource, transcript, summary, duration } = validationResult.data;
 
     // Create session
     const session = await prisma.recordingSession.create({
@@ -70,7 +107,7 @@ export async function POST(request: NextRequest) {
     if (transcript && Array.isArray(transcript) && transcript.length > 0) {
       // transcript is an array of { id, speaker, text, timestamp, startTime }
       console.log('💾 Saving transcripts to database:', transcript.length);
-      
+
       for (const t of transcript) {
         await prisma.transcript.create({
           data: {
@@ -84,12 +121,12 @@ export async function POST(request: NextRequest) {
           },
         });
       }
-      
+
       console.log('✅ Saved', transcript.length, 'transcripts to database');
     } else if (transcript && typeof transcript === 'string') {
       // Fallback: if transcript is a string, split it
       const sentences = transcript.split(/[.!?]+/).filter((s: string) => s.trim().length > 0);
-      
+
       for (let i = 0; i < sentences.length; i++) {
         await prisma.transcript.create({
           data: {
@@ -111,4 +148,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
   }
 }
-

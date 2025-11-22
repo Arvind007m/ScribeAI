@@ -1,14 +1,8 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -47,17 +41,17 @@ export default function SessionDetailPage() {
     async function fetchSession() {
       try {
         const response = await fetch(`/api/sessions/${params.id}`);
-        
+
         if (response.status === 404) {
           setSession(null);
           setLoading(false);
           return;
         }
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch session');
         }
-        
+
         const data = await response.json();
         setSession(data.session);
       } catch (error) {
@@ -83,9 +77,9 @@ export default function SessionDetailPage() {
     const transcriptText = session.transcripts
       .map((t) => `[${t.timestamp}] ${t.speaker}: ${t.text}`)
       .join('\n');
-    
+
     const fullText = `ScribeAI Transcript - ${session.title}\nDate: ${new Date(session.startedAt).toLocaleString()}\n\n${transcriptText}\n\n---\n\nSummary:\n${session.summary || 'No summary available'}`;
-    
+
     const blob = new Blob([fullText], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -95,7 +89,7 @@ export default function SessionDetailPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
+
     toast({
       title: 'Exported',
       description: 'Transcript has been downloaded.',
@@ -106,7 +100,7 @@ export default function SessionDetailPage() {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes}m ${secs}s`;
     } else if (minutes > 0) {
@@ -180,9 +174,7 @@ export default function SessionDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle className="font-headline">Transcript</CardTitle>
-          <CardDescription>
-            {session.transcripts.length} segments
-          </CardDescription>
+          <CardDescription>{session.transcripts.length} segments</CardDescription>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[500px] w-full rounded-md border p-4">

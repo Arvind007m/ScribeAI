@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -69,12 +69,8 @@ export default function LoginPage() {
           <div className="flex items-center justify-center mb-4">
             <BotMessageSquare className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold font-headline">
-            Welcome to ScribeAI
-          </CardTitle>
-          <CardDescription>
-            Sign in to your account to start transcribing
-          </CardDescription>
+          <CardTitle className="text-2xl font-bold font-headline">Welcome to ScribeAI</CardTitle>
+          <CardDescription>Sign in to your account to start transcribing</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -109,11 +105,7 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -125,10 +117,7 @@ export default function LoginPage() {
             </Button>
             <div className="text-sm text-center text-muted-foreground">
               Don't have an account?{' '}
-              <Link
-                href="/signup"
-                className="text-primary hover:underline font-medium"
-              >
+              <Link href="/signup" className="text-primary hover:underline font-medium">
                 Sign up
               </Link>
             </div>
@@ -138,4 +127,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
