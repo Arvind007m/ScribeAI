@@ -495,9 +495,11 @@ export function RecordingInterfaceStream() {
                       AI Summary
                     </h3>
                   </div>
-                  <div className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border-2 border-primary/20 shadow-inner">
-                    <p className="text-base leading-relaxed whitespace-pre-wrap">{summary}</p>
-                  </div>
+                  <ScrollArea className="h-96 w-full rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 shadow-inner">
+                    <div className="p-6">
+                      <p className="text-base leading-relaxed whitespace-pre-wrap">{summary}</p>
+                    </div>
+                  </ScrollArea>
                 </div>
               </>
             )}

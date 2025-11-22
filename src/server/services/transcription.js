@@ -119,7 +119,9 @@ async function generateSummary(fullTranscript) {
     // Generate summary using Gemini
     const result = await ai.generate({
       model: 'googleai/gemini-2.5-flash',
-      prompt: `Analyze the following meeting transcript and provide a comprehensive summary including:
+      prompt: `Analyze the following meeting transcript and provide a comprehensive summary in PLAIN TEXT format (no markdown, no asterisks, no special formatting).
+
+Include these sections:
 
 1. Main Topics Discussed: What were the primary subjects covered?
 2. Key Decisions Made: What important decisions were reached?
@@ -130,10 +132,14 @@ async function generateSummary(fullTranscript) {
 Transcript:
 ${fullTranscript}
 
-Please provide a well-structured, professional summary:`,
+IMPORTANT: 
+- Write the summary in plain text only. Do not use markdown formatting, asterisks, or any special characters for emphasis. Use simple paragraphs and line breaks.
+- Provide a COMPLETE summary for all 5 sections above. Do not cut off mid-sentence.
+- Write at least 3-4 sentences for each section.`,
       config: {
         temperature: 0.3,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,
+        stopSequences: [],
       },
     });
 
