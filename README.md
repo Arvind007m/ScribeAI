@@ -29,7 +29,7 @@ ScribeAI is a full-stack Next.js application that captures and transcribes audio
 
 ### System Architecture
 
-\`\`\`mermaid
+```mermaid
 graph TB
     Client[Web Browser]
     NextJS[Next.js App Router]
@@ -46,11 +46,11 @@ graph TB
     SocketIO -->|Audio Chunks| Gemini
     Gemini -->|Transcription| SocketIO
     SocketIO -->|Real-time Updates| Client
-\`\`\`
+```
 
 ### Audio Streaming Pipeline
 
-\`\`\`mermaid
+```mermaid
 sequenceDiagram
     participant Browser
     participant MediaRecorder
@@ -69,7 +69,7 @@ sequenceDiagram
     Server->>Database: Store Transcript
     Server->>Socket.io: Emit 'transcription-update'
     Socket.io->>Browser: Display Transcript
-\`\`\`
+```
 
 ## Architecture Comparison: Streaming vs. Upload
 
@@ -130,39 +130,39 @@ sequenceDiagram
 ### Installation
 
 1. **Clone the repository**
-   \`\`\`bash
+   ```bash
    git clone https://github.com/Arvind007m/ScribeAI.git
    cd ScribeAI
-   \`\`\`
+   ```
 
 2. **Install dependencies**
-   \`\`\`bash
+   ```bash
    npm install
-   \`\`\`
+   ```
 
 3. **Set up environment variables**
    
-   Create a \`.env.local\` file in the root directory:
-   \`\`\`env
+   Create a `.env.local` file in the root directory:
+   ```env
    DATABASE_URL="postgresql://username:password@localhost:5432/scribeai"
    BETTER_AUTH_SECRET="your-secret-key-min-32-chars"
    BETTER_AUTH_URL="http://localhost:9002"
    GOOGLE_GEMINI_API_KEY="your-gemini-api-key"
    NODE_ENV="development"
-   \`\`\`
+   ```
 
 4. **Set up the database**
    
    Run Prisma migrations to create database tables:
-   \`\`\`bash
+   ```bash
    npx prisma migrate dev --name init
    npx prisma generate
-   \`\`\`
+   ```
 
 5. **Start the development server**
-   \`\`\`bash
+   ```bash
    npm run dev
-   \`\`\`
+   ```
 
 6. **Open your browser**
    
@@ -172,20 +172,20 @@ sequenceDiagram
 
 #### Option 1: Local PostgreSQL (Docker)
 
-\`\`\`bash
-docker run --name scribeai-postgres \\
-  -e POSTGRES_PASSWORD=password \\
-  -e POSTGRES_DB=scribeai \\
-  -p 5432:5432 \\
+```bash
+docker run --name scribeai-postgres \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=scribeai \
+  -p 5432:5432 \
   -d postgres:16
-\`\`\`
+```
 
 #### Option 2: Cloud Database (Supabase)
 
 1. Create a free account at [supabase.com](https://supabase.com)
 2. Create a new project
 3. Copy the connection string from Settings > Database
-4. Update \`DATABASE_URL\` in \`.env.local\`
+4. Update `DATABASE_URL` in `.env.local`
 
 ## Usage Guide
 
@@ -225,7 +225,7 @@ docker run --name scribeai-postgres \\
 
 ### Project Structure
 
-\`\`\`
+```
 scribeai/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
@@ -244,11 +244,11 @@ scribeai/
 │   └── schema.prisma          # Database schema
 ├── server.js                  # Custom Next.js server
 └── package.json
-\`\`\`
+```
 
 ### Available Scripts
 
-\`\`\`bash
+```bash
 npm run dev              # Start development server with Socket.io
 npm run build            # Build for production
 npm run start            # Start production server
@@ -258,7 +258,7 @@ npm run typecheck        # Run TypeScript compiler check
 npm run prisma:generate  # Generate Prisma client
 npm run prisma:migrate   # Run database migrations
 npm run prisma:studio    # Open Prisma Studio (DB GUI)
-\`\`\`
+```
 
 ### Key Technologies & Patterns
 
@@ -272,17 +272,17 @@ Uses the **MediaRecorder API** with 30-second chunking:
 #### Real-time Communication
 
 **Socket.io** events:
-- \`start-session\`: Initialize recording
-- \`audio-chunk\`: Stream audio data
-- \`transcription-update\`: Receive live transcripts
-- \`pause-session\` / \`resume-session\`: Control recording
-- \`stop-session\`: Finalize and process
+- `start-session`: Initialize recording
+- `audio-chunk`: Stream audio data
+- `transcription-update`: Receive live transcripts
+- `pause-session` / `resume-session`: Control recording
+- `stop-session`: Finalize and process
 
 #### State Management
 
 React hooks with TypeScript for type-safe state:
-- \`useAudioStream\`: Main recording logic
-- \`useToast\`: User notifications
+- `useAudioStream`: Main recording logic
+- `useToast`: User notifications
 
 ## Long-Session Scalability
 
