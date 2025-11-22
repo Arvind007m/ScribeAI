@@ -365,6 +365,3 @@ For a 1-hour recording session:
 - [Radix UI](https://www.radix-ui.com) for accessible components
 - [Tailwind CSS](https://tailwindcss.com) for styling
 
----
-
-**Built for the AttackCapital Assignment**
