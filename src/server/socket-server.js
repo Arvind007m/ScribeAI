@@ -1,7 +1,19 @@
 const { Server: SocketIOServer } = require('socket.io');
 const { processAudioChunk, generateSummary } = require('./services/transcription');
 
+/**
+ * WebSocket server for real-time audio streaming and transcription
+ * Handles bidirectional communication between client and server for:
+ * - Audio chunk streaming (30-second intervals)
+ * - Real-time transcript updates via Socket.io
+ * - Session state management (start, pause, resume, stop)
+ * - Gemini AI integration for transcription
+ */
 class SocketServer {
+  /**
+   * Initialize Socket.io server with HTTP server instance
+   * @param {http.Server} server - Node.js HTTP server instance
+   */
   constructor(server) {
     this.io = new SocketIOServer(server, {
       path: '/api/socket.io',
@@ -19,6 +31,10 @@ class SocketServer {
     console.log('Socket.io server initialized');
   }
 
+  /**
+   * Set up Socket.io event handlers for audio streaming workflow
+   * Handles: connection, start-recording, audio-chunk, pause, resume, stop, disconnect
+   */
   setupEventHandlers() {
     this.io.on('connection', (socket) => {
       console.log(`Client connected: ${socket.id}`);
@@ -130,6 +146,10 @@ class SocketServer {
     });
   }
 
+  /**
+   * Get Socket.io server instance
+   * @returns {SocketIOServer} Socket.io server instance
+   */
   getIO() {
     return this.io;
   }

@@ -1,5 +1,12 @@
 const { ai } = require('../../ai/genkit');
 
+/**
+ * Process audio chunk and generate transcription using Gemini AI
+ * @param {Buffer} audioData - Raw audio buffer in WebM format
+ * @param {string} sessionId - Unique recording session identifier
+ * @param {number} chunkIndex - Sequential chunk number for ordering
+ * @returns {Promise<Array|null>} Array of transcript segments with speaker identification
+ */
 async function processAudioChunk(audioData, sessionId, chunkIndex) {
   try {
     console.log(`Processing audio chunk ${chunkIndex}, size: ${audioData.length} bytes`);
@@ -88,6 +95,11 @@ CRITICAL INSTRUCTIONS:
   }
 }
 
+/**
+ * Generate comprehensive AI summary of meeting transcripts using Gemini
+ * @param {string} fullTranscript - Complete transcript text from all chunks
+ * @returns {Promise<string>} Formatted summary with key points, decisions, and action items
+ */
 async function generateSummary(fullTranscript) {
   try {
     if (!fullTranscript || fullTranscript.trim().length === 0) {
@@ -130,6 +142,11 @@ IMPORTANT:
   }
 }
 
+/**
+ * Convert milliseconds to formatted timestamp string (HH:MM:SS)
+ * @param {number} ms - Time in milliseconds
+ * @returns {string} Formatted timestamp in HH:MM:SS format
+ */
 function formatTimestamp(ms) {
   const totalSeconds = Math.floor(ms / 1000);
   const hours = Math.floor(totalSeconds / 3600);
